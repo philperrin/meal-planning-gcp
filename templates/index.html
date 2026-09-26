@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Meal Planning Assistant</title>
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🍽️%3C/text%3E%3C/svg%3E">
+  <!-- Include Premium CSS Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+
+  <div class="app-container">
+    <!-- Header Area -->
+    <header>
+      <div class="brand" onclick="switchView('welcome')" role="button" tabindex="0" title="Return to Welcome"
+        aria-label="Meal Planning Assistant Home">
+        <span class="brand-icon">🍽️</span>
+        <h1>Meal Planning Assistant</h1>
+      </div>
+      <div class="header-right-tools">
+        <nav class="nav-desktop">
+          <button class="nav-tab" data-view="planner">🗓️ Planner</button>
+          <button class="nav-tab" data-view="history">📜 History</button>
+          <button class="nav-tab" data-view="preferences">❤️ Preferences</button>
+          <button class="nav-tab" data-view="settings">⚙️ Settings</button>
+        </nav>
+        <div class="auth-container">
+          {% if authenticated and user %}
+            <div class="user-badge" title="Signed in as {{ user.email }}">
+              {% if user.picture %}
+                <img src="{{ user.picture }}" alt="{{ user.name }}" class="user-avatar">
+              {% else %}
+                <span>👤</span>
+              {% endif %}
+              <span style="font-size: 13px; font-weight: 500;">{{ user.name or user.email }}</span>
+              <a href="{{ url_for('views.auth_logout') }}" class="btn-signout" title="Sign out">Sign Out</a>
+            </div>
+          {% else %}
+            <a href="{{ url_for('views.auth_login') }}" class="btn-google" title="Sign in with Google">
+              <svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align: middle;">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+              </svg>
+              <span>Sign In</span>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Views -->
+    <main>
+
+      <!-- LOADING SCREEN OVERLAY -->
+      <div class="loading-overlay" id="loader">
+        <div class="loader"></div>
+        <div class="loading-text" id="loading-title">Loading...</div>
+        <div class="loading-subtext" id="loading-subtext">Please wait while we set up the application.</div>
+      </div>
+
+      <!-- VIEW: WELCOME (Landing View) -->
+      <div class="view active" id="welcome-view">
+        <div class="panel welcome-hero">
+          <div class="welcome-hero-content">
+            <h2 class="welcome-title">Welcome!</h2>
+            <p class="welcome-lead">
+              I'm your intelligent meal planning assistant - designed to streamline your weekly dinner planning. I'll
+              help generate balanced meal plans, schedule complete meals onto your Google Calendar, and create a
+              consolidated grocery list.<br>
+              This app was developed by Phil at <a href="https://milehighdataviz.com" target="_blank">Mile High Data
+                Viz</a>.
+            </p>
+            <div class="welcome-skip-container">
+              <label class="welcome-skip-label" for="skip-welcome-checkbox">
+                <input type="checkbox" id="skip-welcome-checkbox" class="welcome-skip-checkbox"
+                  onchange="handleToggleSkipWelcome(this.checked)">
+                <span>Next time, skip this page and go directly to Planner</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="welcome-grid">
+          <!-- Step 1: Getting Started -->
+          <div class="welcome-card" onclick="switchView('settings')" role="button" tabindex="0">
+            <div class="welcome-card-header">
+              <span class="welcome-step-num">Step 1</span>
+              <span class="welcome-card-icon">⚙️</span>
+            </div>
+            <h3 class="welcome-card-title">Getting Started</h3>
+            <p class="welcome-card-desc">
+              Go to the <strong>Settings</strong> page to confirm you have an active API key connected.</p>
+            <button class="welcome-card-btn" type="button" onclick="event.stopPropagation(); switchView('settings');">
+              Configure Settings <span>→</span>
+            </button>
+          </div>
+
+          <!-- Step 2: Setting Preferences -->
+          <div class="welcome-card" onclick="switchView('preferences')" role="button" tabindex="0">
+            <div class="welcome-card-header">
+              <span class="welcome-step-num">Step 2</span>
+              <span class="welcome-card-icon">❤️</span>
+            </div>
+            <h3 class="welcome-card-title">Setting Preferences</h3>
+            <p class="welcome-card-desc">
+              Set your <strong>Preferences</strong> for allergies, preferred cuisines, diner count, and meal times.</p>
+            <button class="welcome-card-btn" type="button"
+              onclick="event.stopPropagation(); switchView('preferences');">
+              Set Preferences <span>→</span>
+            </button>
+          </div>
+
+          <!-- Step 3: Generating Meal Plans -->
+          <div class="welcome-card" onclick="switchView('planner')" role="button" tabindex="0">
+            <div class="welcome-card-header">
+              <span class="welcome-step-num">Step 3</span>
+              <span class="welcome-card-icon">🗓️</span>
+            </div>
+            <h3 class="welcome-card-title">Generate Meal Plans</h3>
+            <p class="welcome-card-desc">
+              Use the <strong>Planner</strong> tab to generate customized dinners - creating a shopping list and
+              calendar events for each meal.</p>
+            <button class="welcome-card-btn" type="button" onclick="event.stopPropagation(); switchView('planner');">
+              Open Planner <span>→</span>
+            </button>
+          </div>
+
+          <!-- Step 4: Reviewing Past Meals -->
+          <div class="welcome-card" onclick="switchView('history')" role="button" tabindex="0">
+            <div class="welcome-card-header">
+              <span class="welcome-step-num">Step 4</span>
+              <span class="welcome-card-icon">📜</span>
+            </div>
+            <div class="welcome-card-title-row">
+              <h3 class="welcome-card-title">Review Past Meals</h3>
+            </div>
+            <p class="welcome-card-desc">
+              Use the <strong>History</strong> tab to review previous recipes, add recipes to a 'Favorites' list, and
+              re-use recipes.
+            </p>
+            <button class="welcome-card-btn" type="button" onclick="event.stopPropagation(); switchView('history');">
+              Explore History <span>→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: PLANNER -->
+      <div class="view" id="planner-view">
+        <div class="panel" style="margin-bottom: 24px; padding: 24px;">
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label for="plan-preferences-input">Preferences for this week's plan</label>
+            <div class="input-desc">Input specific ideas or needs for certain meals this week (e.g. 'I'd like one
+              pizza
+              night that includes margherita pizza')</div>
+            <textarea id="plan-preferences-input" rows="2" style="min-height: 70px;"></textarea>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="planner-chips-section">
+            <div class="planner-chips-label">⚡ Quick Presets</div>
+            <div class="input-desc" style="margin-top: 4px; margin-bottom: 12px; font-size: 13px;">
+              Select one or more presets. One meal in the meal plan will include the presets (not all meals will have
+              all presets applied).
+            </div>
+            <div class="planner-chips-grid" id="planner-chips-container">
+              <button type="button" class="filter-chip" id="chip-quick" data-tag="quick"
+                onclick="handleToggleFilterChip('quick')">
+                <span class="chip-icon">⚡</span>
+                <span>20-30 Min Quick Meals</span>
+              </button>
+              <button type="button" class="filter-chip" id="chip-one_pot" data-tag="one_pot"
+                onclick="handleToggleFilterChip('one_pot')">
+                <span class="chip-icon">🥘</span>
+                <span>One-Pot / Sheet Pan</span>
+              </button>
+              <button type="button" class="filter-chip" id="chip-kid_friendly" data-tag="kid_friendly"
+                onclick="handleToggleFilterChip('kid_friendly')">
+                <span class="chip-icon">👶</span>
+                <span>Kid-Friendly / Picky-Safe</span>
+              </button>
+              <button type="button" class="filter-chip" id="chip-slow_cooker" data-tag="slow_cooker"
+                onclick="handleToggleFilterChip('slow_cooker')">
+                <span class="chip-icon">❄️</span>
+                <span>Slow Cooker / Instant Pot</span>
+              </button>
+              <button type="button" class="filter-chip" id="chip-high_veggie" data-tag="high_veggie"
+                onclick="handleToggleFilterChip('high_veggie')">
+                <span class="chip-icon">🥦</span>
+                <span>High-Veggie / Light</span>
+              </button>
+              <button type="button" class="filter-chip" id="chip-comfort" data-tag="comfort"
+                onclick="handleToggleFilterChip('comfort')">
+                <span class="chip-icon">🧀</span>
+                <span>Comfort Classics</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <label for="meal-count-input"
+                style="margin-bottom: 0; font-size: 14px; text-transform: none; letter-spacing: 0;">Number of dinners
+                to
+                generate:</label>
+              <input type="number" id="meal-count-input" min="1" max="14" value="4"
+                style="width: 70px; padding: 8px 12px; background: rgba(28, 30, 21, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 14px;">
+            </div>
+            <button class="btn" onclick="handleGenerateMealPlan()"><i class="brand-icon" style="font-size:16px;">✦</i>
+              Generate Dinner Plan</button>
+          </div>
+
+          <!-- Ephemeral Re-use Staged Notice on Planner Tab -->
+          <div id="planner-reuse-notice" class="planner-reuse-notice" style="display: none;">
+            <!-- Staged past recipes will be listed here -->
+          </div>
+        </div>
+        <div id="planner-container">
+          <!-- Dynamic meal plan, cards, and execution reports are rendered here -->
+        </div>
+      </div>
+
+      <!-- VIEW: HISTORY -->
+      <div class="view" id="history-view">
+        <div class="panel">
+          <div class="history-header-row">
+            <div>
+              <h2 class="panel-title" style="margin-bottom: 4px;">📜 Past Recipes & ⭐ Family Favorites</h2>
+              <p id="history-desc" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 0;">
+                Review past recipes, star family favorites, and click <strong>+ Add to Plan</strong> to instantly slot
+                staple recipes into your active weekly plan.
+              </p>
+            </div>
+          </div>
+
+          <!-- History Sub-Navigation Tabs -->
+          <div class="history-subnav">
+            <button type="button" class="history-subtab active" id="subtab-history-recent"
+              onclick="switchHistoryTab('recent')">
+              <span class="subtab-icon">📜</span>
+              <span>Recipe History</span>
+              <span class="subtab-badge" id="badge-recent-count">0</span>
+            </button>
+            <button type="button" class="history-subtab" id="subtab-history-favorites"
+              onclick="switchHistoryTab('favorites')">
+              <span class="subtab-icon">⭐</span>
+              <span>Family Favorites</span>
+              <span class="subtab-badge" id="badge-favorites-count">0</span>
+            </button>
+          </div>
+
+          <!-- Staged Re-use Banner in History View -->
+          <div id="history-reuse-banner" class="reuse-banner" style="display: none;">
+            <div class="reuse-banner-content">
+              <span class="reuse-banner-icon">✨</span>
+              <span id="reuse-banner-text"><strong>0 recipes</strong> selected to re-use</span>
+            </div>
+            <div class="reuse-banner-actions">
+              <button type="button" class="btn btn-sm btn-gold" onclick="switchView('planner')">🗓️ Open in
+                Planner</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="clearReusedRecipes()">✕ Clear</button>
+            </div>
+          </div>
+
+          <div id="history-container">
+            <!-- Dynamic history items list is rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: PREFERENCES -->
+      <div class="view" id="preferences-view">
+        <div class="panel">
+          <h2 class="panel-title">💖 Dietary & Meal Preferences</h2>
+          <p id="preferences-desc"
+            style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-top: -12px; margin-bottom: 20px;">
+            Set your household defaults, dietary restrictions, preferred cuisines, diner count, and meal schedule. These
+            preferences automatically guide every generated meal plan.
+          </p>
+
+          <div class="form-group">
+            <label for="pref-allergies">Allergy & Sensitivity Constraints</label>
+            <div class="input-desc">Specify any ingredients to strictly avoid due to allergies or sensitivities.</div>
+            <textarea id="pref-allergies" placeholder="e.g., No eggs..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="pref-dietary-preferences">Dietary & Cuisine Preferences</label>
+            <div class="input-desc">Specify general dietary choices, preferred cuisines (e.g., Italian, Mexican,
+              Mediterranean, Asian-inspired), dietary styles, or specific dislikes.</div>
+            <textarea id="pref-dietary-preferences"
+              placeholder="e.g., Prefer Mediterranean, Mexican, and Italian cuisines. High protein, lean meats, plenty of vegetables..."></textarea>
+          </div>
+
+          <!-- Diner Count and daily prep time row -->
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-top: 12px;">
+            <div class="form-group">
+              <label for="pref-diners">Number of Diners (Quantity)</label>
+              <div class="input-desc">Number of expected diners for scaling ingredients.</div>
+              <input type="number" id="pref-diners" min="1" max="100" value="2"
+                style="width: 100px; padding: 10px 14px; background: rgba(28, 30, 21, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 15px;">
+            </div>
+
+            <div class="form-group">
+              <label for="pref-meal-time">Default Daily Prep Time</label>
+              <div class="input-desc">Specify default time for calendar events (AM/PM).</div>
+              <input type="text" id="pref-meal-time" placeholder="e.g., 06:00 PM"
+                style="width: 150px; padding: 10px 14px; background: rgba(28, 30, 21, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-sans); font-size: 15px;">
+            </div>
+          </div>
+
+          <!-- Startup Navigation Preference -->
+          <div class="form-group" style="margin-top: 16px;">
+            <label class="welcome-skip-label" for="pref-skip-welcome"
+              style="text-transform: none; font-size: 14px; font-weight: 500; cursor: pointer;">
+              <input type="checkbox" id="pref-skip-welcome" class="welcome-skip-checkbox"
+                onchange="handleToggleSkipWelcome(this.checked)">
+              <span>Skip welcome screen on startup (open Planner directly)</span>
+            </label>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <button class="btn" onclick="handleSavePreferences()">Save Preferences</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: SETTINGS -->
+      <div class="view" id="settings-view">
+        <div class="panel">
+          <h2 class="panel-title">🔑 Configuration & API Keys</h2>
+
+          <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+              <label style="margin-bottom:0;">Gemini API Key</label>
+              <div id="api-badge" class="api-badge missing">• Checking status...</div>
+            </div>
+            <div class="input-desc" id="api-desc">
+              Required to run the Gemini AI recipe generation models. The app includes a shared starter key, or you
+              can
+              supply your own personal key from Google AI Studio for dedicated rate limits.
+            </div>
+            <input type="text" id="api-key-input" placeholder="Paste personal AIzaSy... key to override">
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
+            <button class="btn btn-secondary"
+              onclick="window.open('https://aistudio.google.com/app/apikey', '_blank')">✨ Create API Key</button>
+            <button class="btn" onclick="handleSaveApiKey()">🔑 Save API Key</button>
+            <button class="btn btn-secondary btn-danger" onclick="handleDeleteApiKey()">❌ Clear Personal Key</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3 class="panel-title" style="font-size: 16px; margin-bottom: 12px;">App Deployment & Information</h3>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+            This system runs entirely serverless within your Google Account.
+            All recipe details and meal history are saved securely in your Google Drive inside the file
+            <strong style="color:var(--accent-secondary);">Automated_Meal_Planner_DB.json</strong>.
+          </p>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+            Upon meal plan approval, the assistant will automatically generate:
+          </p>
+          <ul
+            style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-left: 20px; margin-top: 6px;">
+            <li>Prep & cook events scheduled on your default Google Calendar with complete recipe details, scaled
+              ingredients, and cooking instructions in the event description.</li>
+            <li>A dedicated <strong>🛒 Groceries</strong> checklist event on your Google Calendar containing your
+              complete grocery list organized by store section.</li>
+          </ul>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+            Individual Google Docs can also be created on-demand anytime from the <strong>History & Favorites</strong>
+            tab.
+          </p>
+        </div>
+
+        <div class="panel">
+          <h3 class="panel-title" style="font-size: 16px; margin-bottom: 12px;">Data Privacy & How Your Information
+            Is Handled</h3>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+            We respect your privacy and designed this application to keep your personal data strictly under your
+            control:
+          </p>
+          <ul
+            style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-left: 20px; margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
+            <li><strong>Local Storage in Your Google Drive:</strong> All your personal data—including dietary
+              preferences, allergies, custom recipes, meal history, and approved meal plans—is stored exclusively in
+              your private Google Drive in the <strong
+                style="color:var(--accent-secondary);">Automated_Meal_Planner_DB.json</strong> file. No external
+              database or unauthorized party can access your information.</li>
+            <li><strong>AI Generation & Processing:</strong> When generating meal plans or recipes, only the necessary
+              planning criteria (allergy constraints, dietary & cuisine preferences, diner count, per-plan notes, and
+              requested meal count) are sent securely to Google's Gemini API
+              (<code>generativelanguage.googleapis.com</code>).
+              No identity credentials, emails, or unrelated files are transmitted.</li>
+            <li><strong>Starter vs. Personal API Key:</strong> The default starter key runs on Google AI Studio's free
+              tier. If you provide your own personal Gemini API key, all AI requests are processed directly against
+              your
+              personal Google AI Studio account with your dedicated quota and privacy terms.</li>
+            <li><strong>No Third-Party Tracking:</strong> This application contains zero third-party advertising
+              scripts, tracking pixels, or marketing analytics.</li>
+          </ul>
+        </div>
+
+        <div class="panel">
+          <h3 class="panel-title" style="font-size: 16px; margin-bottom: 12px;">App Development and Feedback</h3>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+            The Meal Planning Assistant was developed by Phil at
+            <a href="https://milehighdataviz.com" target="_blank">Mile High Data Viz</a>.<br>
+            For questions or feedback, contact Phil at <a
+              href="mailto:phil@milehighdataviz.com&subject=Meal%20Planning%20Assistant%20Feedback">phil@milehighdataviz.com</a>.
+          </p>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- STICKY BOTTOM NAVIGATION (MOBILE) -->
+    <nav class="bottom-nav" id="bottom-nav" aria-label="Mobile Navigation">
+      <button class="nav-tab" data-view="planner">
+        <span class="nav-tab-icon">🗓️</span>
+        <span class="nav-tab-label">Planner</span>
+      </button>
+      <button class="nav-tab" data-view="history">
+        <span class="nav-tab-icon">📜</span>
+        <span class="nav-tab-label">History</span>
+      </button>
+      <button class="nav-tab" data-view="preferences">
+        <span class="nav-tab-icon">❤️</span>
+        <span class="nav-tab-label">Preferences</span>
+      </button>
+      <button class="nav-tab" data-view="settings">
+        <span class="nav-tab-icon">⚙️</span>
+        <span class="nav-tab-label">Settings</span>
+      </button>
+    </nav>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast">
+      <span></span>
+    </div>
+  </div>
+
+  <!-- Include Client-Side JS -->
+  <script src="{{ url_for('static', filename='js/api_client.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>
