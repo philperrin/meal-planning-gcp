@@ -36,6 +36,26 @@ def client(app):
     return app.test_client()
 
 @pytest.fixture
+def auth_client(app):
+    """Provides an authenticated test client with mock session tokens."""
+    c = app.test_client()
+    with c.session_transaction() as sess:
+        sess["google_oauth_token"] = {
+            "token": "mock-token",
+            "refresh_token": "mock-refresh",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "client_id": "mock-client-id",
+            "client_secret": "mock-secret",
+            "scopes": ["https://www.googleapis.com/auth/calendar"],
+        }
+        sess["google_user_profile"] = {
+            "email": "testuser@gmail.com",
+            "name": "Test User",
+            "picture": "https://example.com/avatar.jpg"
+        }
+    return c
+
+@pytest.fixture
 def sample_recipes():
     """Provides realistic sample recipe data matching Gemini schema."""
     return [

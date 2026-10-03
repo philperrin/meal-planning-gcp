@@ -3,50 +3,49 @@
    Includes modern dark mode, glassmorphism, responsive grids, and clean transitions.
 */
 
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
 
+  /* Theme: Mineral Forest & Clay */
   :root {
-    --bg-primary: #1c1e15;
-    /* Deep organic olive-black */
-    --bg-secondary: #272a1e;
-    /* Dark forest green */
-    --bg-card: rgba(39, 42, 30, 0.75);
-    /* Muted dark green glass */
-    --border-card: rgba(237, 224, 212, 0.08);
-    /* Warm cream border */
-    --border-card-hover: rgba(101, 109, 74, 0.5);
-    /* Sage green hover border */
+    /* Colors */
+    --bg-primary: #F2EFE9; /* Canvas / Page Background */
+    --bg-secondary: #E3DDD2; /* Container / Panel Fill */
+    --bg-card: #ffffff; /* Glass Card / Header Fill */
+    --input-bg: #F8F6F2; /* Input / Textarea Background */
+    --border-card: #B8B2A4; /* Card / Panel Border */
+    --border-card-hover: #566555; /* Card Hover Border Glow */
+    --input-border: #B8B2A4; /* Input & Control Border */
+    --text-primary: #282E27; /* Heading & Primary Text */
+    --text-secondary: #50584E; /* Body & Secondary Text */
+    --text-muted: #788275; /* Muted & Caption Text */
+    --accent-primary: #566555; /* Primary Accent (Main Buttons) */
+    --accent-primary-hover: #424F41; /* Primary Accent Hover */
+    --accent-secondary: #AA7755; /* Secondary Accent (Gold / Stars) */
+    --accent-secondary-hover: #8E5F3F; /* Secondary Accent Hover */
+    --success: #566555; /* Success / Ready Badge */
+    --error: #cf5c5c; /* Error / Danger (Delete Key) */
+    --warning: #AA7755; /* Warning / Attention Tag */
+    --tag-bg: #D8DEC9; /* Tag & Pill Background */
 
-    --text-primary: #ede0d4;
-    /* Warm cream */
-    --text-secondary: #dcd1c5;
-    /* Soft tan/cream */
-    --text-muted: #8e957e;
-    /* Muted sage */
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(40, 46, 39, 0.06);
+    --shadow-md: 0 8px 24px rgba(40, 46, 39, 0.10);
+    --shadow-lg: 0 16px 40px rgba(40, 46, 39, 0.14);
 
-    --accent-primary: #656d4a;
-    /* Sage green */
-    --accent-primary-hover: #4f5539;
-    /* Darker sage green */
-    --accent-secondary: #A68A64;
-    /* Warm golden tan */
-    --accent-secondary-hover: #7F5539;
-    /* Warm brown */
+    /* Typography */
+    --font-sans: 'DM Sans', sans-serif;
+    --font-heading: 'DM Sans', sans-serif;
+    --font-size-base: 15px;
+    --line-height-base: 1.55;
+    --letter-spacing-base: -0.2px;
 
-    --error: #cf5c5c;
-    /* Soft red */
-    --success: #656d4a;
-    /* Sage success */
-
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
-
-    --font-sans: 'Outfit', sans-serif;
+    /* Shape & Radius */
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --radius-sm: 8px;
     --radius-md: 16px;
     --radius-lg: 24px;
+    --border-width: 1px;
+    --glass-blur: 16px;
   }
 
   * {

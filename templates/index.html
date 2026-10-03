@@ -24,9 +24,11 @@
       <div class="header-right-tools">
         <nav class="nav-desktop">
           <button class="nav-tab" data-view="planner">🗓️ Planner</button>
+          {% if authenticated and user %}
           <button class="nav-tab" data-view="history">📜 History</button>
           <button class="nav-tab" data-view="preferences">❤️ Preferences</button>
           <button class="nav-tab" data-view="settings">⚙️ Settings</button>
+          {% endif %}
         </nav>
         <div class="auth-container">
           {% if authenticated and user %}
@@ -87,6 +89,7 @@
         </div>
 
         <div class="welcome-grid">
+          {% if authenticated and user %}
           <!-- Step 1: Getting Started -->
           <div class="welcome-card" onclick="switchView('settings')" role="button" tabindex="0">
             <div class="welcome-card-header">
@@ -115,11 +118,12 @@
               Set Preferences <span>→</span>
             </button>
           </div>
+          {% endif %}
 
-          <!-- Step 3: Generating Meal Plans -->
+          <!-- Step: Generating Meal Plans -->
           <div class="welcome-card" onclick="switchView('planner')" role="button" tabindex="0">
             <div class="welcome-card-header">
-              <span class="welcome-step-num">Step 3</span>
+              {% if authenticated and user %}<span class="welcome-step-num">Step 3</span>{% endif %}
               <span class="welcome-card-icon">🗓️</span>
             </div>
             <h3 class="welcome-card-title">Generate Meal Plans</h3>
@@ -131,6 +135,7 @@
             </button>
           </div>
 
+          {% if authenticated and user %}
           <!-- Step 4: Reviewing Past Meals -->
           <div class="welcome-card" onclick="switchView('history')" role="button" tabindex="0">
             <div class="welcome-card-header">
@@ -148,6 +153,7 @@
               Explore History <span>→</span>
             </button>
           </div>
+          {% endif %}
         </div>
       </div>
 
@@ -316,16 +322,6 @@
             </div>
           </div>
 
-          <!-- Startup Navigation Preference -->
-          <div class="form-group" style="margin-top: 16px;">
-            <label class="welcome-skip-label" for="pref-skip-welcome"
-              style="text-transform: none; font-size: 14px; font-weight: 500; cursor: pointer;">
-              <input type="checkbox" id="pref-skip-welcome" class="welcome-skip-checkbox"
-                onchange="handleToggleSkipWelcome(this.checked)">
-              <span>Skip welcome screen on startup (open Planner directly)</span>
-            </label>
-          </div>
-
           <div style="margin-top: 24px;">
             <button class="btn" onclick="handleSavePreferences()">Save Preferences</button>
           </div>
@@ -355,6 +351,16 @@
               onclick="window.open('https://aistudio.google.com/app/apikey', '_blank')">✨ Create API Key</button>
             <button class="btn" onclick="handleSaveApiKey()">🔑 Save API Key</button>
             <button class="btn btn-secondary btn-danger" onclick="handleDeleteApiKey()">❌ Clear Personal Key</button>
+          </div>
+
+          <!-- Startup Navigation Preference -->
+          <div class="form-group" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+            <label class="welcome-skip-label" for="setting-skip-welcome"
+              style="text-transform: none; font-size: 14px; font-weight: 500; cursor: pointer;">
+              <input type="checkbox" id="setting-skip-welcome" class="welcome-skip-checkbox"
+                onchange="handleToggleSkipWelcome(this.checked)">
+              <span>Skip welcome screen on startup (open Planner directly)</span>
+            </label>
           </div>
         </div>
 
@@ -428,6 +434,7 @@
         <span class="nav-tab-icon">🗓️</span>
         <span class="nav-tab-label">Planner</span>
       </button>
+      {% if authenticated and user %}
       <button class="nav-tab" data-view="history">
         <span class="nav-tab-icon">📜</span>
         <span class="nav-tab-label">History</span>
@@ -440,6 +447,7 @@
         <span class="nav-tab-icon">⚙️</span>
         <span class="nav-tab-label">Settings</span>
       </button>
+      {% endif %}
     </nav>
 
     <!-- TOAST NOTIFICATION -->
@@ -448,6 +456,11 @@
     </div>
   </div>
 
+  <script>
+    window.APP_CONFIG = {
+      authenticated: {{ 'true' if (authenticated and user) else 'false' }}
+    };
+  </script>
   <!-- Include Client-Side JS -->
   <script src="{{ url_for('static', filename='js/api_client.js') }}"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>

@@ -55,3 +55,9 @@ class Config:
     PARENT_FOLDER_NAME = "Meal Plan Recipes"
     STORAGE_MODE = os.getenv("STORAGE_MODE", "drive")  # 'drive' or 'local'
     LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", str(BASE_DIR / "data" / "Automated_Meal_Planner_DB.json"))
+    
+    # User Registry & Alerting Configuration (Google Cloud Storage)
+    USER_REGISTRY_BUCKET = os.getenv("USER_REGISTRY_BUCKET", f"{PROJECT_ID}-user-registry")
+    USER_REGISTRY_FILE = os.getenv("USER_REGISTRY_FILE", "users_registry.json")
+    LOCAL_USER_REGISTRY_PATH = os.getenv("LOCAL_USER_REGISTRY_PATH", str(BASE_DIR / "data" / "users_registry.json"))
+

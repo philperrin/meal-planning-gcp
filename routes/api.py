@@ -11,6 +11,7 @@ from flask import Blueprint, request, jsonify, session
 
 from config import Config
 from core.auth import get_user_credentials, require_credentials, is_authenticated
+from core.config_keys import get_default_db
 from core.exceptions import AppError, GeminiError, GeminiQuotaError, StorageError
 from services.storage_service import get_storage_provider
 from services.gemini_service import generate_meal_plan_ai, reroll_single_recipe_ai
@@ -48,9 +49,13 @@ def handle_general_exception(e: Exception):
 @api_bp.route("/data", methods=["GET"])
 def load_app_data():
     """Loads database contents, preferences, active plan, and API key status."""
-    creds = get_user_credentials()
-    storage = get_storage_provider(creds)
-    db = storage.load_db()
+    authenticated = is_authenticated()
+    if authenticated:
+        creds = get_user_credentials()
+        storage = get_storage_provider(creds)
+        db = storage.load_db()
+    else:
+        db = get_default_db()
 
     api_key, key_type = get_effective_api_key()
     personal_key = session.get("personal_gemini_api_key", "").strip()
@@ -64,7 +69,7 @@ def load_app_data():
             "hasSharedKey": bool(Config.GEMINI_API_KEY.strip()),
             "activeKeyType": key_type
         },
-        "authenticated": is_authenticated()
+        "authenticated": authenticated
     })
 
 @api_bp.route("/preferences", methods=["POST"])
@@ -152,9 +157,16 @@ def generate_meal_plan():
     locked_indices = payload.get("lockedIndices", []) or []
     pantry_ingredients = payload.get("pantryIngredients", []) or []
 
-    creds = get_user_credentials()
-    storage = get_storage_provider(creds)
-    db = storage.load_db()
+    authenticated = is_authenticated()
+    if authenticated:
+        creds = get_user_credentials()
+        storage = get_storage_provider(creds)
+        db = storage.load_db()
+    else:
+        creds = None
+        storage = None
+        db = get_default_db()
+
     prefs = db.get("preferences", {})
     recipe_library = db.get("recipeLibrary", {})
     existing_plan_recipes = (db.get("mealPlan", {}) or {}).get("recipes", []) or []
@@ -226,22 +238,6 @@ def generate_meal_plan():
             final_recipes.append(pool[pool_idx])
             pool_idx += 1
 
-    gen_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    for recipe in final_recipes:
-        if recipe and recipe.get("name") and recipe["name"] not in recipe_library:
-            recipe_library[recipe["name"]] = {
-                "name": recipe["name"],
-                "description": recipe.get("description", ""),
-                "prepTime": recipe.get("prepTime", "15m"),
-                "cookTime": recipe.get("cookTime", "20m"),
-                "ingredients": recipe.get("ingredients", []),
-                "instructions": recipe.get("instructions", []),
-                "docUrl": recipe.get("docUrl", recipe.get("url", "")),
-                "docId": recipe.get("docId", recipe.get("fileId", "")),
-                "originalDiners": prefs.get("dinersCount", 4),
-                "lastScheduledDate": recipe.get("lastScheduledDate", recipe.get("date", gen_date))
-            }
-
     db["mealPlan"] = {
         "recipes": final_recipes,
         "approved": False,
@@ -251,10 +247,27 @@ def generate_meal_plan():
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "executionResult": None
     }
-    db["recipeLibrary"] = recipe_library
     db["preferences"]["pantryIngredients"] = pantry_ingredients
 
-    storage.save_db(db)
+    if authenticated and storage:
+        gen_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        for recipe in final_recipes:
+            if recipe and recipe.get("name") and recipe["name"] not in recipe_library:
+                recipe_library[recipe["name"]] = {
+                    "name": recipe["name"],
+                    "description": recipe.get("description", ""),
+                    "prepTime": recipe.get("prepTime", "15m"),
+                    "cookTime": recipe.get("cookTime", "20m"),
+                    "ingredients": recipe.get("ingredients", []),
+                    "instructions": recipe.get("instructions", []),
+                    "docUrl": recipe.get("docUrl", recipe.get("url", "")),
+                    "docId": recipe.get("docId", recipe.get("fileId", "")),
+                    "originalDiners": prefs.get("dinersCount", 4),
+                    "lastScheduledDate": recipe.get("lastScheduledDate", recipe.get("date", gen_date))
+                }
+        db["recipeLibrary"] = recipe_library
+        storage.save_db(db)
+
     return jsonify({"success": True, "db": db})
 
 @api_bp.route("/meal-plan/reroll", methods=["POST"])
@@ -267,9 +280,16 @@ def reroll_single_recipe():
     selected_tags = payload.get("selectedTags", []) or []
     pantry_ingredients = payload.get("pantryIngredients", []) or []
 
-    creds = get_user_credentials()
-    storage = get_storage_provider(creds)
-    db = storage.load_db()
+    authenticated = is_authenticated()
+    if authenticated:
+        creds = get_user_credentials()
+        storage = get_storage_provider(creds)
+        db = storage.load_db()
+    else:
+        creds = None
+        storage = None
+        db = get_default_db()
+
     prefs = db.get("preferences", {})
 
     api_key, key_type = get_effective_api_key()
@@ -298,22 +318,23 @@ def reroll_single_recipe():
     else:
         plan_recipes.append(new_recipe)
 
-    if "recipeLibrary" not in db:
-        db["recipeLibrary"] = {}
-    db["recipeLibrary"][new_recipe["name"]] = {
-        "name": new_recipe["name"],
-        "description": new_recipe.get("description", ""),
-        "prepTime": new_recipe.get("prepTime", "15m"),
-        "cookTime": new_recipe.get("cookTime", "20m"),
-        "ingredients": new_recipe.get("ingredients", []),
-        "instructions": new_recipe.get("instructions", []),
-        "docUrl": "",
-        "docId": "",
-        "originalDiners": prefs.get("dinersCount", 4),
-        "lastScheduledDate": datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    }
+    if authenticated and storage:
+        if "recipeLibrary" not in db:
+            db["recipeLibrary"] = {}
+        db["recipeLibrary"][new_recipe["name"]] = {
+            "name": new_recipe["name"],
+            "description": new_recipe.get("description", ""),
+            "prepTime": new_recipe.get("prepTime", "15m"),
+            "cookTime": new_recipe.get("cookTime", "20m"),
+            "ingredients": new_recipe.get("ingredients", []),
+            "instructions": new_recipe.get("instructions", []),
+            "docUrl": "",
+            "docId": "",
+            "originalDiners": prefs.get("dinersCount", 4),
+            "lastScheduledDate": datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        }
+        storage.save_db(db)
 
-    storage.save_db(db)
     return jsonify({
         "success": True,
         "newRecipe": new_recipe,
@@ -328,6 +349,9 @@ def save_active_meal_plan():
     recipes_list = payload.get("recipes", [])
     if not isinstance(recipes_list, list):
         raise AppError("Invalid recipes list format.")
+
+    if not is_authenticated():
+        return jsonify({"success": True, "db": get_default_db()})
 
     creds = get_user_credentials()
     storage = get_storage_provider(creds)
@@ -426,6 +450,15 @@ def create_doc_endpoint():
 @api_bp.route("/recipes/history", methods=["GET"])
 def get_recipe_history():
     """Retrieves up to 50 scheduled recipes and 50 top-rated favorites."""
+    if not is_authenticated():
+        return jsonify({
+            "success": True,
+            "history": [],
+            "favorites": [],
+            "ratings": {},
+            "library": {}
+        })
+
     creds = get_user_credentials()
     storage = get_storage_provider(creds)
     db = storage.load_db()

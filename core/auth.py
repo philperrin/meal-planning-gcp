@@ -98,11 +98,19 @@ def exchange_code_for_tokens(
             "oauth2", "v2", credentials=creds, cache_discovery=False
         )
         user_info = user_info_service.userinfo().get().execute()
-        session[SESSION_USER_KEY] = {
+        user_profile = {
             "email": user_info.get("email"),
             "name": user_info.get("name"),
             "picture": user_info.get("picture"),
         }
+        session[SESSION_USER_KEY] = user_profile
+        
+        # Track user login and trigger alerts for new users
+        try:
+            from core.user_registry import record_user_login
+            record_user_login(user_profile)
+        except Exception as reg_err:
+            logger.warning(f"User registry recording non-critical warning: {reg_err}")
     except Exception as e:
         logger.warning(f"Could not retrieve user info after token exchange: {e}")
         session[SESSION_USER_KEY] = {"email": "user@google.com", "name": "Google User"}

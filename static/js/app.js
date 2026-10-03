@@ -5,6 +5,7 @@
 
   // Application State
   let appState = {
+    authenticated: (typeof window !== 'undefined' && window.APP_CONFIG && !!window.APP_CONFIG.authenticated) || false,
     db: {
       preferences: {},
       mealPlan: null,
@@ -64,8 +65,8 @@
     prefAllergies: document.getElementById('pref-allergies'),
     prefDietaryPreferences: document.getElementById('pref-dietary-preferences'),
     prefDiners: document.getElementById('pref-diners'),
-    prefMealTime: document.getElementById('pref-meal-time'),
-    prefSkipWelcome: document.getElementById('pref-skip-welcome'),
+    prefSkipWelcome: document.getElementById('setting-skip-welcome') || document.getElementById('pref-skip-welcome'),
+    settingSkipWelcome: document.getElementById('setting-skip-welcome') || document.getElementById('pref-skip-welcome'),
     skipWelcomeCheckbox: document.getElementById('skip-welcome-checkbox'),
     cuisineGrid: document.getElementById('cuisine-grid'),
 
@@ -146,6 +147,10 @@
   function switchView(viewId) {
     if (!viewId) return;
 
+    if (!appState.authenticated && (viewId === 'history' || viewId === 'preferences' || viewId === 'settings')) {
+      viewId = 'planner';
+    }
+
     // Synchronize All Nav Tabs (both desktop header and sticky bottom nav)
     document.querySelectorAll('.nav-tab').forEach(t => {
       if (t.getAttribute('data-view') === viewId) {
@@ -199,6 +204,9 @@
 
   function onInitialDataLoaded(data) {
     hideLoader();
+    if (typeof data.authenticated !== 'undefined') {
+      appState.authenticated = !!data.authenticated;
+    }
     appState.db = data.db;
     appState.hasApiKey = data.hasApiKey;
     appState.apiKeyStatus = data.apiKeyStatus || {
@@ -225,6 +233,7 @@
     // Populate and Sync Skip Welcome Checkbox
     const shouldSkip = !!prefs.skipWelcomePage;
     if (els.skipWelcomeCheckbox) els.skipWelcomeCheckbox.checked = shouldSkip;
+    if (els.settingSkipWelcome) els.settingSkipWelcome.checked = shouldSkip;
     if (els.prefSkipWelcome) els.prefSkipWelcome.checked = shouldSkip;
     try {
       if (typeof localStorage !== 'undefined') {
@@ -1651,7 +1660,7 @@
    * Save Preferences to Drive
    */
   function handleSavePreferences() {
-    const skipPref = els.prefSkipWelcome ? els.prefSkipWelcome.checked : (els.skipWelcomeCheckbox ? els.skipWelcomeCheckbox.checked : false);
+    const skipPref = (els.settingSkipWelcome && els.settingSkipWelcome.checked) || (els.prefSkipWelcome && els.prefSkipWelcome.checked) || (els.skipWelcomeCheckbox && els.skipWelcomeCheckbox.checked) || false;
     const prefs = {
       allergies: els.prefAllergies.value.trim(),
       dietaryPreferences: els.prefDietaryPreferences.value.trim(),
@@ -1669,6 +1678,7 @@
         appState.db = data.db;
         const shouldSkip = !!data.db.preferences.skipWelcomePage;
         if (els.skipWelcomeCheckbox) els.skipWelcomeCheckbox.checked = shouldSkip;
+        if (els.settingSkipWelcome) els.settingSkipWelcome.checked = shouldSkip;
         if (els.prefSkipWelcome) els.prefSkipWelcome.checked = shouldSkip;
         try {
           if (typeof localStorage !== 'undefined') {
@@ -1690,6 +1700,7 @@
   function handleToggleSkipWelcome(isChecked) {
     isChecked = !!isChecked;
     if (els.skipWelcomeCheckbox) els.skipWelcomeCheckbox.checked = isChecked;
+    if (els.settingSkipWelcome) els.settingSkipWelcome.checked = isChecked;
     if (els.prefSkipWelcome) els.prefSkipWelcome.checked = isChecked;
 
     if (!appState.db.preferences) appState.db.preferences = {};
@@ -1800,8 +1811,12 @@
     }
 
     if (reusedList.length + lockedList.length < count && !appState.hasApiKey) {
-      showToast("Please configure an API Key in Settings first.", true);
-      switchView('settings');
+      if (appState.authenticated) {
+        showToast("Please configure an API Key in Settings first.", true);
+        switchView('settings');
+      } else {
+        showToast("Gemini API key is not configured.", true);
+      }
       return;
     }
 
@@ -1888,10 +1903,12 @@
       <div>
   `;
 
-    if (!plan.approved) {
-      html += `<button class="btn btn-gold" onclick="handleExecutePlan()"><i class="brand-icon" style="font-size:16px; color:#121824;">✓</i> Execute Approved Plan</button>`;
-    } else {
-      html += `<span class="api-badge active" style="font-size: 13px; padding: 8px 16px;">✓ Fully Approved & Executed</span>`;
+    if (appState.authenticated) {
+      if (!plan.approved) {
+        html += `<button class="btn btn-gold" onclick="handleExecutePlan()"><i class="brand-icon" style="font-size:16px; color:#121824;">✓</i> Execute Approved Plan</button>`;
+      } else {
+        html += `<span class="api-badge active" style="font-size: 13px; padding: 8px 16px;">✓ Fully Approved & Executed</span>`;
+      }
     }
 
     html += `
