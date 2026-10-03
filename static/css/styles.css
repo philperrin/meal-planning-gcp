@@ -67,14 +67,17 @@
   }
 
   /* HTML Links */
-  a {
+  a,
+  a:link,
+  a:visited {
     color: var(--text-secondary);
     text-decoration: underline;
     text-underline-offset: 2px;
     transition: var(--transition);
   }
 
-  a:hover {
+  a:hover,
+  a:active {
     color: var(--text-primary);
   }
 
@@ -2102,10 +2105,6 @@
     }
   }
 
-  a:link {
-    color: #ede0d4;
-    text-decoration: none;
-  }
 
   /* Cuisine Preferences Grid & Controls */
   .cuisine-grid {
