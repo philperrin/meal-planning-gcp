@@ -41,11 +41,11 @@ def get_default_db():
     """Generates the initial default database schema matching Apps Script."""
     return {
         "preferences": {
-            "allergies": "No eggs.",
-            "dietaryPreferences": "Strong preference for high protein and seasonal vegetables.",
+            "allergies": "",
+            "dietaryPreferences": "",
             "cuisinePreferences": {},
-            "dinersCount": 2,
-            "defaultMealTime": "06:00 PM",
+            "dinersCount": 4,
+            "defaultMealTime": "5:30pm",
             "skipWelcomePage": False,
             "pantryIngredients": [],
         },

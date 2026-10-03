@@ -211,8 +211,16 @@
     const prefs = appState.db.preferences || {};
     els.prefAllergies.value = prefs.allergies || "";
     els.prefDietaryPreferences.value = prefs.dietaryPreferences || "";
-    els.prefDiners.value = prefs.dinersCount || 2;
-    els.prefMealTime.value = prefs.defaultMealTime || "06:00 PM";
+    els.prefDiners.value = prefs.dinersCount || 4;
+    els.prefMealTime.value = prefs.defaultMealTime || "5:30pm";
+
+    // Ensure Planner Tab inputs are configured
+    if (els.planPreferencesInput) {
+      els.planPreferencesInput.value = "";
+    }
+    if (els.mealCountInput && !els.mealCountInput.value) {
+      els.mealCountInput.value = 4;
+    }
 
     // Populate and Sync Skip Welcome Checkbox
     const shouldSkip = !!prefs.skipWelcomePage;
@@ -1648,8 +1656,8 @@
       allergies: els.prefAllergies.value.trim(),
       dietaryPreferences: els.prefDietaryPreferences.value.trim(),
       cuisinePreferences: appState.cuisinePreferences || {},
-      dinersCount: parseInt(els.prefDiners.value, 10) || 2,
-      defaultMealTime: els.prefMealTime.value.trim(),
+      dinersCount: parseInt(els.prefDiners.value, 10) || 4,
+      defaultMealTime: els.prefMealTime.value.trim() || "5:30pm",
       skipWelcomePage: skipPref
     };
 
@@ -1776,7 +1784,7 @@
    */
   function handleGenerateMealPlan() {
     const reusedList = Array.from(appState.reusedRecipes);
-    const count = parseInt(els.mealCountInput.value, 10) || 7;
+    const count = parseInt(els.mealCountInput.value, 10) || 4;
     const planPreferences = els.planPreferencesInput ? els.planPreferencesInput.value.trim() : "";
     const selectedTagsList = Array.from(appState.selectedTags);
     const lockedList = Array.from(appState.lockedIndices);
@@ -1802,11 +1810,11 @@
     if (lockedList.length > 0 || reusedList.length > 0) {
       const keptCount = Math.min(count, lockedList.length + reusedList.length);
       const neededNew = Math.max(0, count - keptCount);
-      subtext = `Keeping ${keptCount} locked/reused dishes + generating ${neededNew} new dishes (scaling for ${els.prefDiners.value || 2} diners).`;
+      subtext = `Keeping ${keptCount} locked/reused dishes + generating ${neededNew} new dishes (scaling for ${els.prefDiners.value || 4} diners).`;
     } else {
       subtext = usingShared
-        ? `Generating ${count} dinner recipes using shared starter key. Scaling for ${els.prefDiners.value || 2} diners (10-15s).`
-        : `Generating ${count} dinner recipes. Scaling ingredients for ${els.prefDiners.value || 2} diners (10-15s).`;
+        ? `Generating ${count} dinner recipes using shared starter key. Scaling for ${els.prefDiners.value || 4} diners (10-15s).`
+        : `Generating ${count} dinner recipes. Scaling ingredients for ${els.prefDiners.value || 4} diners (10-15s).`;
     }
 
     showLoader("Preparing Meal Plan...", subtext);

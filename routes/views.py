@@ -80,3 +80,9 @@ def auth_status():
         "authenticated": is_authenticated(),
         "user": get_current_user(),
     })
+
+@views_bp.route("/palette-tester")
+def palette_tester():
+    """Serves the static color palette testing and live customization studio."""
+    return render_template("palette_tester.html")
+

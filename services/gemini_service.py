@@ -174,7 +174,7 @@ def generate_meal_plan_ai(
     """
     Generates remaining_count unique dinner recipes matching all household and meal plan constraints.
     """
-    diners_count = preferences.get("dinersCount", 2)
+    diners_count = preferences.get("dinersCount", 4)
     allergies = preferences.get("allergies", "None specified")
     dietary_prefs = preferences.get("dietaryPreferences", "None specified")
     
@@ -253,7 +253,7 @@ def reroll_single_recipe_ai(
     """
     Generates 1 single replacement dinner recipe, avoiding duplicates of all other meals in the plan.
     """
-    diners_count = preferences.get("dinersCount", 2)
+    diners_count = preferences.get("dinersCount", 4)
     allergies = preferences.get("allergies", "None specified")
     dietary_prefs = preferences.get("dietaryPreferences", "None specified")
 

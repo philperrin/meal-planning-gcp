@@ -16,8 +16,8 @@ def test_migrate_db_schema_restrictions_to_dietary():
     assert updated is True
     assert "restrictions" not in migrated["preferences"]
     assert migrated["preferences"]["dietaryPreferences"] == "No red meat, low sodium"
-    assert migrated["preferences"]["dinersCount"] == 2
-    assert migrated["preferences"]["defaultMealTime"] == "06:00 PM"
+    assert migrated["preferences"]["dinersCount"] == 4
+    assert migrated["preferences"]["defaultMealTime"] == "5:30pm"
     assert migrated["preferences"]["skipWelcomePage"] is False
 
 def test_migrate_recipe_library_from_array():
@@ -54,14 +54,17 @@ def test_local_storage_provider_lifecycle(temp_db_path):
     # 1. Load from non-existent file should create default DB
     db = provider.load_db()
     assert "preferences" in db
-    assert db["preferences"]["dinersCount"] == 2
+    assert db["preferences"]["dinersCount"] == 4
+    assert db["preferences"]["allergies"] == ""
+    assert db["preferences"]["dietaryPreferences"] == ""
+    assert db["preferences"]["defaultMealTime"] == "5:30pm"
     
     # 2. Modify and save
-    db["preferences"]["dinersCount"] = 4
+    db["preferences"]["dinersCount"] = 6
     db["preferences"]["allergies"] = "Shellfish"
     provider.save_db(db)
     
     # 3. Reload and verify persistence
     reloaded = provider.load_db()
-    assert reloaded["preferences"]["dinersCount"] == 4
+    assert reloaded["preferences"]["dinersCount"] == 6
     assert reloaded["preferences"]["allergies"] == "Shellfish"

@@ -31,16 +31,48 @@ gcloud services enable \
     docs.googleapis.com \
     drive.googleapis.com
 
-# 3. Deploy from source to Cloud Run
-echo "Building container and deploying to Cloud Run..."
-gcloud run deploy "$SERVICE_NAME" \
-    --source . \
-    --project "$PROJECT_ID" \
-    --region "$REGION" \
-    --allow-unauthenticated \
-    --platform managed \
-    --memory 512Mi \
-    --timeout 300
+# 3. Parse .env variables for Cloud Run deployment (excluding local redirect URI)
+ENV_VARS=()
+if [ -f ".env" ]; then
+    echo "Loading environment variables from .env..."
+    while IFS='=' read -r key val || [ -n "$key" ]; do
+        # Strip comments and whitespace
+        key=$(echo "$key" | tr -d '[:space:]')
+        if [[ ! "$key" =~ ^# && -n "$key" && "$key" != "GOOGLE_REDIRECT_URI" && "$key" != "PORT" ]]; then
+            val=$(echo "$val" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            ENV_VARS+=("$key=$val")
+        fi
+    done < ".env"
+fi
+ENV_VARS_STRING=$(IFS=','; echo "${ENV_VARS[*]}")
+
+# 4. Build container image with Cloud Build
+IMAGE_TAG="gcr.io/$PROJECT_ID/$SERVICE_NAME"
+echo "Building container image ($IMAGE_TAG) with Cloud Build..."
+gcloud builds submit --tag "$IMAGE_TAG" --project "$PROJECT_ID"
+
+# 5. Deploy container to Cloud Run
+echo "Deploying container to Cloud Run..."
+if [ -n "$ENV_VARS_STRING" ]; then
+    gcloud run deploy "$SERVICE_NAME" \
+        --image "$IMAGE_TAG" \
+        --project "$PROJECT_ID" \
+        --region "$REGION" \
+        --allow-unauthenticated \
+        --platform managed \
+        --memory 512Mi \
+        --timeout 300 \
+        --set-env-vars "$ENV_VARS_STRING"
+else
+    gcloud run deploy "$SERVICE_NAME" \
+        --image "$IMAGE_TAG" \
+        --project "$PROJECT_ID" \
+        --region "$REGION" \
+        --allow-unauthenticated \
+        --platform managed \
+        --memory 512Mi \
+        --timeout 300
+fi
 
 echo ""
 echo "=========================================================="

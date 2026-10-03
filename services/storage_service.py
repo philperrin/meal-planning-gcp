@@ -38,16 +38,24 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
         prefs["dietaryPreferences"] = prefs.pop("restrictions")
         updated = True
 
+    if "allergies" not in prefs:
+        prefs["allergies"] = ""
+        updated = True
+
+    if "dietaryPreferences" not in prefs:
+        prefs["dietaryPreferences"] = ""
+        updated = True
+
     if "cuisinePreferences" not in prefs or not isinstance(prefs["cuisinePreferences"], dict):
         prefs["cuisinePreferences"] = {}
         updated = True
 
     if "dinersCount" not in prefs:
-        prefs["dinersCount"] = 2
+        prefs["dinersCount"] = 4
         updated = True
 
     if "defaultMealTime" not in prefs:
-        prefs["defaultMealTime"] = "06:00 PM"
+        prefs["defaultMealTime"] = "5:30pm"
         updated = True
 
     if "skipWelcomePage" not in prefs:
@@ -92,7 +100,7 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
                     "instructions": r.get("instructions", []),
                     "docUrl": r.get("docUrl", r.get("url", "")),
                     "docId": r.get("docId", r.get("fileId", "")),
-                    "originalDiners": prefs.get("dinersCount", 2),
+                    "originalDiners": prefs.get("dinersCount", 4),
                     "lastScheduledDate": r.get("lastScheduledDate", r.get("date", plan_date))
                 }
                 updated = True
@@ -112,7 +120,7 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
                     "instructions": [],
                     "docUrl": "",
                     "docId": "",
-                    "originalDiners": prefs.get("dinersCount", 2),
+                    "originalDiners": prefs.get("dinersCount", 4),
                     "lastScheduledDate": now_date
                 }
                 updated = True

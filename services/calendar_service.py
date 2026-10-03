@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 def parse_time_str(time_str: str) -> Tuple[int, int]:
     """
     Parses time string supporting AM/PM formats as well as 24-hour.
-    Defaults to 18:00 (6:00 PM).
+    Defaults to 17:30 (5:30 PM).
     """
-    default_hours, default_minutes = 18, 0
+    default_hours, default_minutes = 17, 30
     if not time_str:
         return default_hours, default_minutes
 
@@ -62,8 +62,8 @@ def schedule_approved_meals(
         raise AppError("Google OAuth credentials are required to schedule calendar events.")
 
     cal_service = build("calendar", "v3", credentials=credentials, cache_discovery=False)
-    diners_count = preferences.get("dinersCount", 2)
-    default_meal_time = preferences.get("defaultMealTime", "06:00 PM")
+    diners_count = preferences.get("dinersCount", 4)
+    default_meal_time = preferences.get("defaultMealTime", "5:30pm")
     hours, minutes = parse_time_str(default_meal_time)
 
     approved_map = {item["name"]: item["date"] for item in approved_meals_with_dates if "name" in item and "date" in item}

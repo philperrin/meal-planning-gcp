@@ -81,8 +81,8 @@ def save_preferences():
         "allergies": pref_data.get("allergies", ""),
         "dietaryPreferences": pref_data.get("dietaryPreferences", ""),
         "cuisinePreferences": pref_data.get("cuisinePreferences", {}) if isinstance(pref_data.get("cuisinePreferences"), dict) else {},
-        "dinersCount": int(pref_data.get("dinersCount", 2)),
-        "defaultMealTime": pref_data.get("defaultMealTime", "06:00 PM"),
+        "dinersCount": int(pref_data.get("dinersCount", 4)),
+        "defaultMealTime": pref_data.get("defaultMealTime", "5:30pm"),
         "skipWelcomePage": bool(pref_data.get("skipWelcomePage", False)),
         "pantryIngredients": pref_data.get("pantryIngredients", db.get("preferences", {}).get("pantryIngredients", []))
     }
@@ -179,8 +179,8 @@ def generate_meal_plan():
         cached = recipe_library.get(r_name)
         if cached:
             cloned = copy.deepcopy(cached)
-            orig_diners = int(cloned.get("originalDiners", prefs.get("dinersCount", 2)) or 2)
-            curr_diners = int(prefs.get("dinersCount", 2) or 2)
+            orig_diners = int(cloned.get("originalDiners", prefs.get("dinersCount", 4)) or 4)
+            curr_diners = int(prefs.get("dinersCount", 4) or 4)
             if orig_diners != curr_diners and "ingredients" in cloned:
                 for ing in cloned["ingredients"]:
                     if isinstance(ing.get("amount"), (int, float)):
@@ -238,7 +238,7 @@ def generate_meal_plan():
                 "instructions": recipe.get("instructions", []),
                 "docUrl": recipe.get("docUrl", recipe.get("url", "")),
                 "docId": recipe.get("docId", recipe.get("fileId", "")),
-                "originalDiners": prefs.get("dinersCount", 2),
+                "originalDiners": prefs.get("dinersCount", 4),
                 "lastScheduledDate": recipe.get("lastScheduledDate", recipe.get("date", gen_date))
             }
 
@@ -309,7 +309,7 @@ def reroll_single_recipe():
         "instructions": new_recipe.get("instructions", []),
         "docUrl": "",
         "docId": "",
-        "originalDiners": prefs.get("dinersCount", 2),
+        "originalDiners": prefs.get("dinersCount", 4),
         "lastScheduledDate": datetime.now(timezone.utc).strftime("%Y-%m-%d")
     }
 
@@ -351,7 +351,7 @@ def save_active_meal_plan():
                 "instructions": r.get("instructions", []),
                 "docUrl": r.get("docUrl", r.get("url", "")),
                 "docId": r.get("docId", r.get("fileId", "")),
-                "originalDiners": db.get("preferences", {}).get("dinersCount", 2),
+                "originalDiners": db.get("preferences", {}).get("dinersCount", 4),
                 "lastScheduledDate": r.get("lastScheduledDate", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
             }
 
@@ -412,7 +412,7 @@ def create_doc_endpoint():
     if not recipe:
         raise AppError(f"Recipe '{recipe_name}' not found in library.")
 
-    diners = db.get("preferences", {}).get("dinersCount", 2)
+    diners = db.get("preferences", {}).get("dinersCount", 4)
     doc_result = create_recipe_doc(recipe_name, recipe, diners, creds)
 
     recipe["docUrl"] = doc_result["docUrl"]
@@ -511,7 +511,7 @@ def toggle_favorite():
             "instructions": recipe_obj.get("instructions", []),
             "docUrl": recipe_obj.get("docUrl", ""),
             "docId": recipe_obj.get("docId", ""),
-            "originalDiners": int(recipe_obj.get("originalDiners", db.get("preferences", {}).get("dinersCount", 2)) or 2),
+            "originalDiners": int(recipe_obj.get("originalDiners", db.get("preferences", {}).get("dinersCount", 4)) or 4),
             "dateAdded": datetime.now(timezone.utc).isoformat()
         }
 

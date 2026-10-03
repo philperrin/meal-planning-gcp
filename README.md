@@ -1,5 +1,8 @@
 # Meal Planning Assistant — Cloud Run (Python / Flask)
 
+[![Google OAuth Verified](https://img.shields.io/badge/Google%20OAuth-Verified%20(General%20Use)-4285F4?logo=google&logoColor=white)](https://console.cloud.google.com/apis/credentials/consent?project=meal-planning-app-507921)
+[![Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Deployed-34A853?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+
 A containerized Python / Flask web application refactored from Google Apps Script, deployed on **Google Cloud Run** (`meal-planning-app-507921`). Features AI meal planning with Google Gemini, calendar scheduling, aisle-categorized shopping lists, on-demand recipe Google Docs, and persistent favorite recipe management.
 
 ---
@@ -7,7 +10,7 @@ A containerized Python / Flask web application refactored from Google Apps Scrip
 ## Key Features
 
 - **Google Cloud Run Deployment**: Serverless, autoscaling, containerized with Gunicorn and Python 3.12-slim.
-- **Google OAuth 2.0 Web Sign-In**: Directly syncs dinner events and morning **🛒 Groceries** shopping lists with your personal Google Calendar, creates on-demand recipe Docs in your Google Drive, and connects to your existing `Automated_Meal_Planner_DB.json`.
+- **Google OAuth 2.0 Web Sign-In (Verified for General Use)**: Officially verified by Google for production & general use. Users can seamlessly sign in without unverified app warnings to sync dinner events and morning **🛒 Groceries** shopping lists with personal Google Calendars, generate on-demand recipe Docs in Google Drive, and connect to `Automated_Meal_Planner_DB.json`.
 - **Gemini AI Generation**: Resilient model cascade (`gemini-3.6-flash` ➔ `gemini-3.5-flash` ➔ `gemini-1.5-flash`) with structured JSON schema enforcement, automatic retry with exponential backoff on transient errors, and quick style presets (`quick`, `one_pot`, `kid_friendly`, `slow_cooker`, `high_veggie`, `comfort`).
 - **Aisle-Categorized Groceries**: Automatically categorizes ingredients into 5 store departments (`🥬 Produce`, `🥩 Meat & Seafood`, `🧀 Dairy & Refrigerated`, `🥫 Pantry & Canned`, `🧂 Spices & Baking`) and consolidates duplicate items with unit math.
 - **On-Demand Google Docs**: Generates formatted Google Docs for individual recipes directly from the History or Favorites tab without cluttering Google Drive.
@@ -109,19 +112,18 @@ Visit `http://localhost:8080` in your browser.
 
 ## Google Cloud Setup & Deployment
 
-### 1. Google Cloud OAuth Consent Screen
-1. Go to **[GCP Console -> APIs & Services -> OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent?project=meal-planning-app-507921)**.
-2. Select **User Type: External** (or Internal for Workspace domains).
-3. Fill in App Name (`Meal Planning Assistant`) and your email.
-4. Add the following Scopes:
-   - `.../auth/calendar`
-   - `.../auth/drive.file`
-   - `.../auth/documents`
-   - `openid`, `email`, `profile`
-5. In **Credentials**, create an **OAuth client ID** (Application type: *Web application*).
-6. Set **Authorized redirect URIs**:
-   - For local dev: `http://localhost:8080/auth/callback`
-   - For Cloud Run: `https://<YOUR-CLOUD-RUN-URL>/auth/callback`
+### 1. Google Cloud OAuth Consent Screen & Verification Status
+- **Verification Status**: ✅ **Google OAuth Verified (Production / In Use)** — Scopes approved for general access without unverified app warnings.
+- **Publishing Status**: In production (General Availability for any Google account).
+- **Console Reference**: **[GCP Console -> APIs & Services -> OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent?project=meal-planning-app-507921)**.
+- **Approved OAuth Scopes**:
+  - `https://www.googleapis.com/auth/calendar` (Google Calendar dinners & grocery events)
+  - `https://www.googleapis.com/auth/drive.file` (App data file storage in Google Drive)
+  - `https://www.googleapis.com/auth/documents` (On-demand recipe Google Docs creation)
+  - `openid`, `https://www.googleapis.com/auth/userinfo.email`, `https://www.googleapis.com/auth/userinfo.profile` (User authentication)
+- **Authorized Redirect URIs**:
+  - Local Dev: `http://localhost:8080/auth/callback`
+  - Cloud Run: `https://<YOUR-CLOUD-RUN-URL>/auth/callback`
 
 ### 2. Deploy to Cloud Run
 Run the deployment script:

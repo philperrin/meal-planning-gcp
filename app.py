@@ -32,6 +32,10 @@ def create_app() -> Flask:
     app.register_blueprint(views_bp)
     app.register_blueprint(api_bp)
 
+    # Enable ProxyFix to correctly handle HTTPS behind Cloud Run's reverse proxy
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
     logger.info(f"Initialized Meal Planning Assistant (Project: {Config.PROJECT_ID})")
     return app
 

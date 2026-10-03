@@ -41,14 +41,13 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
     GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "").strip()
     
-    # OAuth Scopes required for Calendar, Drive file access, Docs, and User Profile
+    # OAuth Scopes required for Calendar, Drive file access, and User Profile
     GOOGLE_OAUTH_SCOPES = [
         "openid",
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
         "https://www.googleapis.com/auth/calendar",
         "https://www.googleapis.com/auth/drive.file",
-        "https://www.googleapis.com/auth/documents",
     ]
     
     # Workspace & Database Configuration
