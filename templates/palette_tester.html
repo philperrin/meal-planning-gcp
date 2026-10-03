@@ -344,7 +344,7 @@
     }
 
     .welcome-lead a {
-      color: var(--accent-secondary);
+      color: var(--text-secondary);
       text-decoration: underline;
     }
 
@@ -493,7 +493,7 @@
     /* Buttons */
     .btn {
       background: var(--accent-primary);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: var(--border-width) solid var(--input-border);
       color: #ffffff;
       padding: 10px 20px;
       font-size: 14px;
@@ -511,6 +511,7 @@
 
     .btn:hover {
       background: var(--accent-primary-hover);
+      border-color: var(--border-card-hover);
       transform: translateY(-2px);
       box-shadow: var(--shadow-md);
     }
@@ -1653,13 +1654,16 @@
           <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
             All your personal data—including dietary preferences, allergies, custom recipes, meal history, and approved meal plans—is stored exclusively in your private Google Drive in the <strong style="color:var(--accent-secondary);">Automated_Meal_Planner_DB.json</strong> file. No third-party ad tracking or marketing analytics are used.
           </p>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-top: 10px;">
+            For more details on how your data is handled, please review our <a href="https://www.milehighdataviz.com/privacy-policy" target="_blank" rel="noopener noreferrer" style="color:var(--text-secondary);">Privacy Policy</a>.
+          </p>
         </div>
 
         <div class="panel">
           <h3 class="panel-title" style="font-size: 16px; margin-bottom: 12px;">App Development and Feedback</h3>
           <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
-            The Meal Planning Assistant was developed by Phil at <a href="https://milehighdataviz.com" target="_blank" style="color:var(--accent-secondary);">Mile High Data Viz</a>.<br>
-            For questions or feedback, contact Phil at <a href="mailto:phil@milehighdataviz.com" style="color:var(--accent-secondary);">phil@milehighdataviz.com</a>.
+            The Meal Planning Assistant was developed by Phil at <a href="https://milehighdataviz.com" target="_blank" style="color:var(--text-secondary);">Mile High Data Viz</a>.<br>
+            For questions or feedback, contact Phil at <a href="mailto:phil@milehighdataviz.com" style="color:var(--text-secondary);">phil@milehighdataviz.com</a>.
           </p>
         </div>
       </div>

@@ -26,6 +26,7 @@
     --error: #cf5c5c; /* Error / Danger (Delete Key) */
     --warning: #AA7755; /* Warning / Attention Tag */
     --tag-bg: #D8DEC9; /* Tag & Pill Background */
+    --tag-border: #566555; /* Tag & Pill Border */
 
     /* Shadows */
     --shadow-sm: 0 2px 8px rgba(40, 46, 39, 0.06);
@@ -63,6 +64,18 @@
     display: flex;
     flex-direction: column;
     overflow-x: hidden;
+  }
+
+  /* HTML Links */
+  a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: var(--transition);
+  }
+
+  a:hover {
+    color: var(--text-primary);
   }
 
   /* App Container */
@@ -420,7 +433,7 @@
     align-items: center;
     gap: 6px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: var(--border-width, 1px) solid var(--input-border);
     color: var(--text-primary);
     padding: 8px 14px;
     border-radius: var(--radius-sm);
@@ -437,7 +450,7 @@
 
   .welcome-card:hover .welcome-card-btn {
     background: rgba(101, 109, 74, 0.2);
-    border-color: rgba(101, 109, 74, 0.35);
+    border-color: var(--border-card-hover, var(--accent-primary));
     color: var(--text-primary);
   }
 
@@ -539,7 +552,7 @@
   /* Action Buttons */
   .btn {
     background: var(--accent-primary);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: var(--border-width, 1px) solid var(--input-border);
     color: #fff;
     padding: 12px 24px;
     font-size: 15px;
@@ -556,6 +569,7 @@
 
   .btn:hover {
     background: var(--accent-primary-hover);
+    border-color: var(--border-card-hover, var(--accent-primary));
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
   }
@@ -566,7 +580,7 @@
 
   .btn-secondary {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: var(--border-width, 1px) solid var(--input-border);
     color: var(--text-secondary);
     box-shadow: none;
   }
@@ -574,31 +588,34 @@
   .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: var(--border-card-hover, var(--accent-primary));
     transform: translateY(-2px);
     box-shadow: none;
   }
 
   .btn-danger {
     background: var(--error);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: var(--border-width, 1px) solid var(--input-border);
+    color: #fff;
     box-shadow: var(--shadow-sm);
   }
 
   .btn-danger:hover {
     background: #b84c4c;
+    border-color: var(--border-card-hover, var(--accent-primary));
     box-shadow: var(--shadow-md);
   }
 
   .btn-gold {
     background: var(--accent-secondary);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: var(--border-width, 1px) solid var(--input-border);
     box-shadow: var(--shadow-sm);
     color: #fff;
   }
 
   .btn-gold:hover {
     background: var(--accent-secondary-hover);
+    border-color: var(--border-card-hover, var(--accent-primary));
     box-shadow: var(--shadow-md);
   }
 
@@ -1925,10 +1942,10 @@
 
   .filter-chip {
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: var(--border-width, 1px) solid var(--input-border);
     color: var(--text-secondary);
     border-radius: 20px;
-    padding: 7px 13px;
+    padding: 7px 14px;
     font-size: 13px;
     font-weight: 500;
     font-family: var(--font-sans);
@@ -1939,26 +1956,23 @@
     transition: var(--transition);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    min-height: 38px;
   }
 
   .filter-chip:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--border-card-hover, var(--accent-primary));
     color: var(--text-primary);
-    transform: translateY(-1px);
   }
 
   .filter-chip.active {
-    background: rgba(217, 119, 6, 0.18);
-    border-color: var(--accent-secondary);
-    color: #fde68a;
-    font-weight: 600;
-    box-shadow: 0 0 10px rgba(217, 119, 6, 0.2);
+    background: var(--tag-bg);
+    border-color: var(--tag-border, var(--accent-primary));
+    color: var(--text-primary);
+    font-weight: 500;
   }
 
   .filter-chip.active .chip-icon {
-    transform: scale(1.15);
+    transform: scale(1.1);
   }
 
   .filter-chip .chip-icon {
@@ -1970,7 +1984,7 @@
   .btn-card-lock,
   .btn-card-swap {
     background: none;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-sm);
     padding: 4px 8px;
     font-size: 12px;

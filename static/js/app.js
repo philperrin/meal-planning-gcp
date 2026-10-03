@@ -65,6 +65,7 @@
     prefAllergies: document.getElementById('pref-allergies'),
     prefDietaryPreferences: document.getElementById('pref-dietary-preferences'),
     prefDiners: document.getElementById('pref-diners'),
+    prefMealTime: document.getElementById('pref-meal-time'),
     prefSkipWelcome: document.getElementById('setting-skip-welcome') || document.getElementById('pref-skip-welcome'),
     settingSkipWelcome: document.getElementById('setting-skip-welcome') || document.getElementById('pref-skip-welcome'),
     skipWelcomeCheckbox: document.getElementById('skip-welcome-checkbox'),
@@ -217,10 +218,10 @@
 
     // Populate Preferences Form
     const prefs = appState.db.preferences || {};
-    els.prefAllergies.value = prefs.allergies || "";
-    els.prefDietaryPreferences.value = prefs.dietaryPreferences || "";
-    els.prefDiners.value = prefs.dinersCount || 4;
-    els.prefMealTime.value = prefs.defaultMealTime || "5:30pm";
+    if (els.prefAllergies) els.prefAllergies.value = prefs.allergies || "";
+    if (els.prefDietaryPreferences) els.prefDietaryPreferences.value = prefs.dietaryPreferences || "";
+    if (els.prefDiners) els.prefDiners.value = prefs.dinersCount || 4;
+    if (els.prefMealTime) els.prefMealTime.value = prefs.defaultMealTime || "5:30pm";
 
     // Ensure Planner Tab inputs are configured
     if (els.planPreferencesInput) {
@@ -1662,11 +1663,11 @@
   function handleSavePreferences() {
     const skipPref = (els.settingSkipWelcome && els.settingSkipWelcome.checked) || (els.prefSkipWelcome && els.prefSkipWelcome.checked) || (els.skipWelcomeCheckbox && els.skipWelcomeCheckbox.checked) || false;
     const prefs = {
-      allergies: els.prefAllergies.value.trim(),
-      dietaryPreferences: els.prefDietaryPreferences.value.trim(),
+      allergies: els.prefAllergies ? els.prefAllergies.value.trim() : "",
+      dietaryPreferences: els.prefDietaryPreferences ? els.prefDietaryPreferences.value.trim() : "",
       cuisinePreferences: appState.cuisinePreferences || {},
-      dinersCount: parseInt(els.prefDiners.value, 10) || 4,
-      defaultMealTime: els.prefMealTime.value.trim() || "5:30pm",
+      dinersCount: els.prefDiners ? (parseInt(els.prefDiners.value, 10) || 4) : 4,
+      defaultMealTime: els.prefMealTime ? (els.prefMealTime.value.trim() || "5:30pm") : "5:30pm",
       skipWelcomePage: skipPref
     };
 
