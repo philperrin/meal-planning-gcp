@@ -1125,7 +1125,7 @@
             </p>
           </div>
           <div class="shopping-list-actions">
-            <button type="button" class="btn btn-sm" id="btn-open-grocery-mode" onclick="handleOpenGroceryMode()" style="background: var(--accent-primary); color: #ede0d4; font-weight: 600;">
+            <button type="button" class="btn btn-sm" id="btn-open-grocery-mode" onclick="handleOpenGroceryMode()" style="background: var(--accent-primary); color: #ffffff; font-weight: 600;">
               <span class="btn-icon">🛒</span>
               <span>Enter Grocery Mode</span>
             </button>
@@ -1906,7 +1906,7 @@
 
     if (appState.authenticated) {
       if (!plan.approved) {
-        html += `<button class="btn btn-gold" onclick="handleExecutePlan()"><i class="brand-icon" style="font-size:16px; color:#121824;">✓</i> Execute Approved Plan</button>`;
+        html += `<button class="btn btn-gold" onclick="handleExecutePlan()"><i class="brand-icon" style="font-size:16px;">✓</i> Execute Approved Plan</button>`;
       } else {
         html += `<span class="api-badge active" style="font-size: 13px; padding: 8px 16px;">✓ Fully Approved & Executed</span>`;
       }
@@ -2232,8 +2232,10 @@
 
     if (isError) {
       els.toast.classList.add('toast-error');
+      els.toast.classList.remove('toast-success');
     } else {
       els.toast.classList.remove('toast-error');
+      els.toast.classList.add('toast-success');
     }
 
     els.toast.classList.add('show');
