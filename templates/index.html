@@ -32,25 +32,29 @@
         </nav>
         <div class="auth-container">
           {% if authenticated and user %}
-            <div class="user-badge" title="Signed in as {{ user.email }}">
-              {% if user.picture %}
-                <img src="{{ user.picture }}" alt="{{ user.name }}" class="user-avatar">
-              {% else %}
-                <span>👤</span>
-              {% endif %}
-              <span style="font-size: 13px; font-weight: 500;">{{ user.name or user.email }}</span>
-              <a href="{{ url_for('views.auth_logout') }}" class="btn-signout" title="Sign out">Sign Out</a>
-            </div>
+          <div class="user-badge" title="Signed in as {{ user.email }}">
+            {% if user.picture %}
+            <img src="{{ user.picture }}" alt="{{ user.name }}" class="user-avatar">
+            {% else %}
+            <span>👤</span>
+            {% endif %}
+            <span style="font-size: 13px; font-weight: 500;">{{ user.name or user.email }}</span>
+            <a href="{{ url_for('views.auth_logout') }}" class="btn-signout" title="Sign out">Sign Out</a>
+          </div>
           {% else %}
-            <a href="{{ url_for('views.auth_login') }}" class="btn-google" title="Sign in with Google">
-              <svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align: middle;">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-              </svg>
-              <span>Sign In</span>
-            </a>
+          <a href="{{ url_for('views.auth_login') }}" class="btn-google" title="Sign in with Google">
+            <svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align: middle;">
+              <path fill="#4285F4"
+                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+              <path fill="#34A853"
+                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
+              <path fill="#FBBC05"
+                d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+              <path fill="#EA4335"
+                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+            </svg>
+            <span>Sign In</span>
+          </a>
           {% endif %}
         </div>
       </div>
@@ -154,11 +158,13 @@
       <div class="view" id="planner-view">
         <div class="panel" style="margin-bottom: 24px; padding: 24px;">
           <div class="form-group" style="margin-bottom: 20px;">
+            <h2 class="panel-title" style="margin-bottom: 4px;">Build Your Mealplan</h2>
             <label for="plan-preferences-input">Preferences for this week's plan</label>
             <div class="input-desc">Input specific ideas or needs for certain meals this week (e.g. 'I'd like one
               pizza
               night that includes margherita pizza')</div>
-            <textarea id="plan-preferences-input" rows="2" style="min-height: 70px;" placeholder="e.g., I'd like one pizza night that includes margherita pizza..."></textarea>
+            <textarea id="plan-preferences-input" rows="2" style="min-height: 70px;"
+              placeholder="e.g., I'd like one pizza night that includes margherita pizza..."></textarea>
           </div>
 
           <!-- Quick Presets -->
@@ -198,10 +204,9 @@
                 style="margin-bottom: 0; font-size: 14px; text-transform: none; letter-spacing: 0;">Number of dinners
                 to
                 generate:</label>
-              <input type="number" id="meal-count-input" min="1" max="14" value="4"
-                style="width: 80px;">
+              <input type="number" id="meal-count-input" min="1" max="14" value="4" style="width: 80px;">
             </div>
-            <button class="btn" onclick="handleGenerateMealPlan()"><i class="brand-icon" style="font-size:16px;">✦</i>
+            <button class="btn" onclick="handleGenerateMealPlan()"><i class="brand-icon" style="font-size:16px;"></i>
               Generate Dinner Plan</button>
           </div>
 
@@ -220,7 +225,7 @@
         <div class="panel">
           <div class="history-header-row">
             <div>
-              <h2 class="panel-title" style="margin-bottom: 4px;">📜 Past Recipes & ⭐ Family Favorites</h2>
+              <h2 class="panel-title" style="margin-bottom: 4px;">Past Recipes & Family Favorites</h2>
               <p id="history-desc" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 0;">
                 Review past recipes, star family favorites, and click <strong>+ Add to Plan</strong> to instantly slot
                 staple recipes into your active weekly plan.
@@ -266,7 +271,7 @@
       <!-- VIEW: PREFERENCES -->
       <div class="view" id="preferences-view">
         <div class="panel">
-          <h2 class="panel-title">💖 Dietary & Meal Preferences</h2>
+          <h2 class="panel-title">Dietary & Meal Preferences</h2>
           <p id="preferences-desc"
             style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-top: -12px; margin-bottom: 20px;">
             Set your household defaults, dietary restrictions, preferred cuisines, diner count, and meal schedule. These
@@ -293,15 +298,13 @@
             <div class="form-group">
               <label for="pref-diners">Number of Diners (Quantity)</label>
               <div class="input-desc">Number of expected diners for scaling ingredients.</div>
-              <input type="number" id="pref-diners" min="1" max="100" value="4"
-                style="width: 100px;">
+              <input type="number" id="pref-diners" min="1" max="100" value="4" style="width: 100px;">
             </div>
 
             <div class="form-group">
               <label for="pref-meal-time">Default Daily Prep Time</label>
               <div class="input-desc">Specify default time for calendar events (AM/PM).</div>
-              <input type="text" id="pref-meal-time" placeholder="e.g., 5:30pm" value="5:30pm"
-                style="width: 160px;">
+              <input type="text" id="pref-meal-time" placeholder="e.g., 5:30pm" value="5:30pm" style="width: 160px;">
             </div>
           </div>
 
@@ -314,7 +317,7 @@
       <!-- VIEW: SETTINGS -->
       <div class="view" id="settings-view">
         <div class="panel">
-          <h2 class="panel-title">🔑 Configuration & API Keys</h2>
+          <h2 class="panel-title">Configuration & API Keys</h2>
 
           <div class="form-group">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
@@ -337,7 +340,8 @@
           </div>
 
           <!-- Startup Navigation Preference -->
-          <div class="form-group" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-card);">
+          <div class="form-group"
+            style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-card);">
             <label class="welcome-skip-label" for="setting-skip-welcome"
               style="text-transform: none; font-size: 14px; font-weight: 500; cursor: pointer;">
               <input type="checkbox" id="setting-skip-welcome" class="welcome-skip-checkbox"
@@ -397,7 +401,9 @@
               scripts, tracking pixels, or marketing analytics.</li>
           </ul>
           <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-top: 14px;">
-            For more details on how your data is handled, please review our <a href="https://www.milehighdataviz.com/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+            For more details on how your data is handled, please review our <a
+              href="https://www.milehighdataviz.com/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy
+              Policy</a>.
           </p>
         </div>
 
@@ -409,6 +415,9 @@
             For questions or feedback, contact Phil at <a
               href="mailto:phil@milehighdataviz.com&subject=Meal%20Planning%20Assistant%20Feedback">phil@milehighdataviz.com</a>.
           </p>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">For feedback
+            on this application, you may complete a quick survey <a href="https://forms.gle/WGb3L25Unp8pWSRk6"
+              target="_blank">here</a>. </p>
         </div>
       </div>
 
