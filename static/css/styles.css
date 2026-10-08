@@ -1443,9 +1443,11 @@
 
     /* Mobile Filter & Navigation Chips (>= 42-44px Touch Targets) */
     .filter-chip {
-      min-height: 42px;
-      padding: 8px 16px;
-      font-size: 13.5px;
+      min-height: 44px;
+      padding: 10px 12px;
+      font-size: 13px;
+      width: 100%;
+      justify-content: center;
     }
 
     .history-subtab {
@@ -1621,6 +1623,8 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 100%;
+    min-width: 0;
   }
 
   .history-item {
@@ -1633,6 +1637,10 @@
     border-radius: var(--radius-sm);
     transition: var(--transition);
     gap: 16px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .history-item:hover {
@@ -1648,7 +1656,7 @@
   .history-item-left {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     flex: 1;
     min-width: 0;
   }
@@ -1658,6 +1666,7 @@
     display: flex;
     align-items: center;
     cursor: pointer;
+    flex-shrink: 0;
   }
 
   .history-checkbox {
@@ -1678,12 +1687,14 @@
     font-weight: 600;
     letter-spacing: 0.5px;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .history-item-name {
     font-weight: 500;
     font-size: 14px;
     color: var(--text-primary);
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2016,27 +2027,33 @@
   }
 
   .planner-chips-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
   }
 
   .filter-chip {
     background: var(--input-bg);
     border: var(--border-width, 1px) solid var(--input-border);
     color: var(--text-secondary);
-    border-radius: 20px;
-    padding: 7px 14px;
-    font-size: 13px;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13.5px;
     font-weight: 500;
     font-family: var(--font-sans);
     cursor: pointer;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 8px;
     transition: var(--transition);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    text-align: center;
   }
 
   .filter-chip:hover {
@@ -2152,23 +2169,72 @@
   }
 
   .history-item .doc-link {
-    background: rgba(101, 109, 74, 0.1);
-    border-color: rgba(101, 109, 74, 0.2);
+    background: rgba(86, 101, 85, 0.1);
+    border: 1px solid rgba(86, 101, 85, 0.25);
+    color: var(--accent-primary);
     padding: 5px 10px;
     font-size: 12px;
+    border-radius: var(--radius-sm);
     white-space: nowrap;
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition);
   }
 
   .history-item .doc-link:hover {
-    background: rgba(101, 109, 74, 0.2);
+    background: rgba(86, 101, 85, 0.2);
+    border-color: var(--accent-primary);
+  }
+
+  .history-item .doc-link.doc-link-create {
+    background: transparent;
+    border: 1px solid rgba(170, 119, 85, 0.4);
+    color: var(--accent-secondary);
+  }
+
+  .history-item .doc-link.doc-link-create:hover {
+    background: rgba(170, 119, 85, 0.12);
+    border-color: var(--accent-secondary);
   }
 
   @media (max-width: 768px) {
     .history-item {
       flex-direction: column;
-      align-items: flex-start;
+      align-items: stretch;
       gap: 10px;
       padding: 12px 14px;
+      overflow: hidden;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .history-item-left {
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      box-sizing: border-box;
+    }
+
+    .history-checkbox-wrap {
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .history-item-date {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .history-item-name {
+      flex: 1 1 0%;
+      min-width: 0;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      line-height: 1.35;
+      font-size: 14px;
     }
 
     .history-item-right {
@@ -2178,8 +2244,18 @@
       align-items: center;
       justify-content: flex-start;
       gap: 8px;
-      border-top: 1px solid rgba(255, 255, 255, 0.04);
-      padding-top: 8px;
+      border-top: 1px solid var(--border-card);
+      padding-top: 10px;
+      margin-top: 2px;
+    }
+
+    .history-item .doc-link {
+      min-height: 40px;
+      padding: 8px 12px;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 

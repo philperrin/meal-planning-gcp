@@ -2638,7 +2638,7 @@
             </button>
             ${(item.docUrl || item.url)
               ? `<a href="${escapeHtml(item.docUrl || item.url)}" target="_blank" class="doc-link" title="Open Google Doc">📄 Open Doc</a>`
-              : `<button type="button" class="doc-link" style="background:none; border: 1px solid var(--accent-secondary); color: var(--accent-secondary); cursor: pointer; padding: 4px 10px; border-radius: 4px; font-size: 13px;" onclick="handleCreateRecipeDoc(event, '${escapeJSString(item.name)}')" title="Generate a Google Doc for this recipe">📄 Create Recipe</button>`
+              : `<button type="button" class="doc-link doc-link-create" onclick="handleCreateRecipeDoc(event, '${escapeJSString(item.name)}')" title="Generate a Google Doc for this recipe">📄 Create Recipe</button>`
             }
           </div>
         </div>
