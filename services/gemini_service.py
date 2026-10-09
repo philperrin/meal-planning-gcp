@@ -202,18 +202,33 @@ def generate_meal_plan_ai(
     plan_pref_text = f"- Specific Preferences / Requests for this meal plan: {plan_preferences}\n\n" if plan_preferences else "\n\n"
 
     prompt = (
-        f"You are a professional chef. Generate a dinner meal plan consisting of exactly {remaining_count} dinner recipes. "
-        f"Scale all ingredient quantities in every recipe to feed exactly {diners_count} diners.\n"
-        "You MUST strictly follow these constraints:\n"
-        f"- Allergy Constraint: {allergies}\n"
-        f"- Dietary & Cuisine Preferences: {dietary_prefs} (Incorporate any cuisine styles, flavor preferences, and dietary restrictions specified here)\n"
+        f"You are an acclaimed executive chef and home meal-planning specialist. "
+        f"You have been professionally trained as a nutritionist and seek to provide high quality meals that contain depth of flavor in each meal. "
+        f"Create a delicious dinner meal plan consisting of exactly {remaining_count} distinct dinner recipes. "
+        f"All ingredient quantities must be precisely scaled to serve exactly {diners_count} diners.\n\n"
+
+        "=== CULINARY EXCELLENCE GUIDELINES ===\n"
+        "1. COMPLETE, NUTRITIONALLY BALANCED MEALS: Each recipe must represent a satisfying, complete dinner "
+        "(incorporating a main protein/centerpiece, vibrant vegetables, and complementary starches or sides within the dish or as paired accompaniments).\n"
+        "2. FLAVOR & TECHNIQUE: Emphasize chef-grade flavor building—seasoning in stages, aromatic bases, proper searing/caramelization, "
+        "and finishing with balancing acids (citrus, vinegar) or fresh herbs.\n"
+        "3. VARIED WEEKLY MENU: Across the generated meals, ensure diversity in primary proteins (e.g. alternating chicken, fish, beef, vegetarian), "
+        "cooking methods (roasting, sautéing, braising, sheet-pan), and flavor profiles.\n"
+        "4. ACTIONABLE, RELIABLE INSTRUCTIONS: Instructions must include specific pan types, heat levels (medium-high, gentle simmer), "
+        "sensory doneness cues ('golden-brown', 'translucent'), and approximate cook times per step.\n"
+        "5. CLEAN GROCERY INGREDIENTS: In the ingredients list, keep 'name' clean as a standard grocery item (e.g., 'yellow onion', 'chicken thighs') "
+        "and describe preparation (diced, minced) in the recipe instructions or unit.\n\n"
+
+        "=== CRITICAL CONSTRAINTS (STRICT ADHERENCE REQUIRED) ===\n"
+        f"- ALLERGIES & ABSOLUTE EXCLUSIONS (Zero Tolerance): {allergies}. Never include these or their hidden derivatives.\n"
+        f"- Dietary & Household Preferences: {dietary_prefs}\n"
         f"{cuisine_constraint_text}"
         f"{pantry_directive_text}"
         f"{avoid_text}"
         f"{tag_directives_text}"
-        f"{plan_pref_text}"
-        "Provide a variety of dinner meals. Every recipe must have ingredients, amounts, units, and clear step-by-step instructions. "
-        "Format the output strictly according to the requested JSON schema. Do not return any other text or explanation outside the JSON structure."
+        f"{plan_pref_text}\n"
+
+        "Format the output strictly according to the requested JSON schema with no preamble or markdown outside the JSON."
     )
 
     payload = {
@@ -287,18 +302,32 @@ def reroll_single_recipe_ai(
     plan_pref_text = f"- Specific Preferences / Requests for this meal plan: {plan_preferences}\n\n" if plan_preferences else "\n\n"
 
     prompt = (
-        f"You are a professional chef. Generate exactly 1 single replacement dinner recipe. "
-        f"Scale all ingredient quantities in the recipe to feed exactly {diners_count} diners.\n"
-        "You MUST strictly follow these constraints:\n"
-        f"- Allergy Constraint: {allergies}\n"
-        f"- Dietary & Cuisine Preferences: {dietary_prefs} (Incorporate any cuisine styles, flavor preferences, and dietary restrictions specified here)\n"
+        f"You are an acclaimed executive chef and home meal-planning specialist. "
+        f"You have been professionally trained as a nutritionist and seek to provide high quality meals that contain depth of flavor in each meal. "
+        f"Create 1 delicious replacement dinner recipe. "
+        f"All ingredient quantities must be precisely scaled to serve exactly {diners_count} diners.\n\n"
+
+        "=== CULINARY EXCELLENCE GUIDELINES ===\n"
+        "1. COMPLETE, NUTRITIONALLY BALANCED MEAL: The recipe must represent a satisfying, complete dinner "
+        "(incorporating a main protein/centerpiece, vibrant vegetables, and complementary starches or sides within the dish or as paired accompaniments).\n"
+        "2. FLAVOR & TECHNIQUE: Emphasize chef-grade flavor building—seasoning in stages, aromatic bases, proper searing/caramelization, "
+        "and finishing with balancing acids (citrus, vinegar) or fresh herbs.\n"
+        "3. HARMONIOUS REPLACEMENT: Ensure this dish provides a fresh flavor profile and protein distinct from the existing/avoided meals.\n"
+        "4. ACTIONABLE, RELIABLE INSTRUCTIONS: Instructions must include specific pan types, heat levels (medium-high, gentle simmer), "
+        "sensory doneness cues ('golden-brown', 'translucent'), and approximate cook times per step.\n"
+        "5. CLEAN GROCERY INGREDIENTS: In the ingredients list, keep 'name' clean as a standard grocery item (e.g., 'yellow onion', 'chicken thighs') "
+        "and describe preparation (diced, minced) in the recipe instructions or unit.\n\n"
+
+        "=== CRITICAL CONSTRAINTS (STRICT ADHERENCE REQUIRED) ===\n"
+        f"- ALLERGIES & ABSOLUTE EXCLUSIONS (Zero Tolerance): {allergies}. Never include these or their hidden derivatives.\n"
+        f"- Dietary & Household Preferences: {dietary_prefs}\n"
         f"{cuisine_constraint_text}"
         f"{pantry_directive_text}"
         f"{avoid_text}"
         f"{tag_directives_text}"
-        f"{plan_pref_text}"
-        "Provide a unique, delicious dinner meal. The recipe must have ingredients, amounts, units, and clear step-by-step instructions. "
-        "Format the output strictly according to the requested JSON schema. Do not return any other text or explanation outside the JSON structure."
+        f"{plan_pref_text}\n"
+
+        "Format the output strictly according to the requested JSON schema with no preamble or markdown outside the JSON."
     )
 
     payload = {

@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 
-<body>
+<body class="{% if not (authenticated and user) %}logged-out{% endif %}">
 
   <div class="app-container">
     <!-- Header Area -->
@@ -23,8 +23,8 @@
       </div>
       <div class="header-right-tools">
         <nav class="nav-desktop">
-          <button class="nav-tab" data-view="planner">🗓️ Planner</button>
           {% if authenticated and user %}
+          <button class="nav-tab" data-view="planner">🗓️ Planner</button>
           <button class="nav-tab" data-view="history">📜 History</button>
           <button class="nav-tab" data-view="preferences">❤️ Preferences</button>
           <button class="nav-tab" data-view="settings">⚙️ Settings</button>
@@ -85,8 +85,8 @@
           </div>
         </div>
 
+        {% if authenticated and user %}
         <div class="welcome-grid">
-          {% if authenticated and user %}
           <!-- Step 1: Getting Started -->
           <div class="welcome-card" onclick="switchView('settings')" role="button" tabindex="0">
             <div class="welcome-card-header">
@@ -115,12 +115,11 @@
               Set Preferences <span>→</span>
             </button>
           </div>
-          {% endif %}
 
-          <!-- Step: Generating Meal Plans -->
+          <!-- Step 3: Generating Meal Plans -->
           <div class="welcome-card" onclick="switchView('planner')" role="button" tabindex="0">
             <div class="welcome-card-header">
-              {% if authenticated and user %}<span class="welcome-step-num">Step 3</span>{% endif %}
+              <span class="welcome-step-num">Step 3</span>
               <span class="welcome-card-icon">🗓️</span>
             </div>
             <h3 class="welcome-card-title">Generate Meal Plans</h3>
@@ -132,7 +131,6 @@
             </button>
           </div>
 
-          {% if authenticated and user %}
           <!-- Step 4: Reviewing Past Meals -->
           <div class="welcome-card" onclick="switchView('history')" role="button" tabindex="0">
             <div class="welcome-card-header">
@@ -150,12 +148,85 @@
               Explore History <span>→</span>
             </button>
           </div>
-          {% endif %}
         </div>
+        {% else %}
+        <!-- Informational Panel for Logged Out Users -->
+        <div class="panel welcome-auth-panel">
+          <div class="welcome-auth-content">
+            <h3 class="welcome-auth-title">Sign In to Unlock the Full Meal Planner</h3>
+            <p class="welcome-auth-lead">
+              To get the most out of this app, please use the <strong>Google Sign In</strong> button in the top
+              right corner.
+            </p>
+
+            <div class="welcome-benefits-card">
+              <h4 class="welcome-benefits-heading">Here is what you can expect once you sign in:</h4>
+              <ul class="welcome-benefits-list">
+                <li class="benefit-item">
+                  <span class="benefit-icon">🍽️</span>
+                  <div class="benefit-text">
+                    <strong>Create a Meal Plan</strong>
+                    <span>Generate customized dinner plans tailored specifically to your household size,
+                      allergies, and cuisine preferences.</span>
+                  </div>
+                </li>
+                <li class="benefit-item">
+                  <span class="benefit-icon">📅</span>
+                  <div class="benefit-text">
+                    <strong>Send Recipe Events to Your Calendar</strong>
+                    <span>Automatically schedule cooking events with complete recipe instructions directly onto your
+                      Google Calendar, along with a synchronized grocery list.</span>
+                  </div>
+                </li>
+                <li class="benefit-item">
+                  <span class="benefit-icon">📜</span>
+                  <div class="benefit-text">
+                    <strong>View Your Personal Recipe History</strong>
+                    <span>Browse past dinners, favorite dishes your family loves, and easily re-use go-to recipes in
+                      future meal plans.</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="welcome-guest-notice">
+              <div class="guest-notice-header">
+                <span class="guest-notice-icon">💡</span>
+                <div class="guest-notice-body">
+                  <h4 class="guest-notice-title">Want to explore without signing in?</h4>
+                  <p class="guest-notice-desc">
+                    You can visit the Planner view to generate a sample meal plan. While you can create a simple meal
+                    plan without logging in, it will not save this plan or add events to your Google Calendar.
+                  </p>
+                </div>
+              </div>
+              <div class="guest-notice-actions">
+                <button type="button" class="btn btn-secondary welcome-guest-btn" onclick="switchView('planner')">
+                  <span>Open Planner (Guest Mode)</span>
+                  <span>→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
       </div>
 
       <!-- VIEW: PLANNER -->
       <div class="view" id="planner-view">
+        {% if not (authenticated and user) %}
+        <!-- Guest Mode Notice in Planner View -->
+        <div class="guest-planner-banner">
+          <div class="guest-banner-left">
+            <span class="guest-banner-icon">ℹ️</span>
+            <div>
+              <strong>Guest Mode:</strong> You can generate a meal plan, but calendar integration and recipe history are
+              disabled until you sign in.
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
         <div class="panel" style="margin-bottom: 24px; padding: 24px;">
           <div class="form-group" style="margin-bottom: 20px;">
             <h2 class="panel-title" style="margin-bottom: 4px;">Build Your Mealplan</h2>
@@ -171,8 +242,7 @@
           <div class="planner-chips-section">
             <div class="planner-chips-label">⚡ Quick Presets</div>
             <div class="input-desc" style="margin-top: 4px; margin-bottom: 12px; font-size: 13px;">
-              Select one or more presets. One meal in the meal plan will include the presets (not all meals will have
-              all presets applied).
+              Select one or more presets. The meal planning app will accommodate as many presets as possible.
             </div>
             <div class="planner-chips-grid" id="planner-chips-container">
               <button type="button" class="filter-chip" id="chip-quick" data-tag="quick"
@@ -424,12 +494,12 @@
     </main>
 
     <!-- STICKY BOTTOM NAVIGATION (MOBILE) -->
+    {% if authenticated and user %}
     <nav class="bottom-nav" id="bottom-nav" aria-label="Mobile Navigation">
       <button class="nav-tab" data-view="planner">
         <span class="nav-tab-icon">🗓️</span>
         <span class="nav-tab-label">Planner</span>
       </button>
-      {% if authenticated and user %}
       <button class="nav-tab" data-view="history">
         <span class="nav-tab-icon">📜</span>
         <span class="nav-tab-label">History</span>
@@ -442,8 +512,8 @@
         <span class="nav-tab-icon">⚙️</span>
         <span class="nav-tab-label">Settings</span>
       </button>
-      {% endif %}
     </nav>
+    {% endif %}
 
     <!-- TOAST NOTIFICATION -->
     <div class="toast" id="toast">

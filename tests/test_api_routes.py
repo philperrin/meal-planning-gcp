@@ -6,7 +6,7 @@ import json
 from unittest.mock import patch
 
 def test_index_route_unauthenticated(client):
-    """When logged out, navigation tabs for History, Preferences, and Settings must not be rendered."""
+    """When logged out, navigation tabs (Planner, History, Preferences, Settings) and Generate Meal Plans card must not appear."""
     response = client.get("/")
     assert response.status_code == 200
     html = response.get_data(as_text=True)
@@ -15,15 +15,23 @@ def test_index_route_unauthenticated(client):
     assert "api_client.js" in html
     assert "app.js" in html
     
-    # Planner tab must be present
-    assert 'data-view="planner"' in html
-    # History, Preferences, Settings tabs should NOT appear in desktop or mobile nav
+    # Navigation tabs should NOT appear in desktop or mobile nav
+    assert 'data-view="planner"' not in html
     assert 'data-view="history"' not in html
     assert 'data-view="preferences"' not in html
     assert 'data-view="settings"' not in html
 
+    # Generate Meal Plans card should NOT appear
+    assert "Generate Meal Plans" not in html
+
+    # Unauthenticated info panel elements should be present
+    assert "Google Sign In" in html
+    assert "Send Recipe Events to Your Calendar" in html
+    assert "View Your Personal Recipe History" in html
+    assert "will not integrate with your Google Calendar" in html
+
 def test_index_route_authenticated(auth_client):
-    """When logged in, all navigation tabs must be present."""
+    """When logged in, all navigation tabs and welcome step cards must be present."""
     response = auth_client.get("/")
     assert response.status_code == 200
     html = response.get_data(as_text=True)
@@ -32,6 +40,7 @@ def test_index_route_authenticated(auth_client):
     assert 'data-view="preferences"' in html
     assert 'data-view="settings"' in html
     assert "Sign Out" in html
+    assert "Generate Meal Plans" in html
 
 def test_auth_status_route(client):
     response = client.get("/auth/status")
