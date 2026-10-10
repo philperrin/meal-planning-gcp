@@ -1,16 +1,17 @@
 # Executive Summary: Meal Planning Assistant (Cloud Run Architecture)
 
-**Date:** September 26, 2026  
-**Status:** ✅ Production-Ready | 21 Automated Tests Passing (Python 3.12) | OAuth 2.0 Verified  
-**Key Docs:** [Product Review](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/docs/PRODUCT_REVIEW.md) | [Prompt Evaluation Protocol](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/docs/PROMPT_EVALUATION_PROTOCOL.md) | [Refactoring Spec](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/spec/cloud_run_refactoring_spec.md) | [README.md](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/README.md)
+**Date:** October 10, 2026  
+**Status:** ✅ Live in Production | Cloud Run Service Deployed | Version `2026.0.002` | 21 Automated Tests Passing (Python 3.12)  
+**Service URL:** [https://meal-planning-app-w3dz7jjuna-uc.a.run.app](https://meal-planning-app-w3dz7jjuna-uc.a.run.app)  
+**Key Docs:** [Product Review](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/docs/PRODUCT_REVIEW.md) | [Prompt Evaluation Protocol](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/docs/PROMPT_EVALUATION_PROTOCOL.md) | [Refactoring Spec](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/spec/cloud_run_refactoring_spec.md) | [README.md](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/README.md) | [GEMINI.md](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/GEMINI.md)
 
 ---
 
 ## 1. Executive Overview & Transformation Journey
 
-The **Meal Planning Assistant** has completed a comprehensive architectural refactoring, evolving from a standalone Google Apps Script (GAS) web app into a high-performance, containerized **Python 3.12 / Flask** microservice engineered for **Google Cloud Run** under project **`meal-planning-app-507921`**.
+The **Meal Planning Assistant** has completed a comprehensive architectural refactoring, evolving from a standalone Google Apps Script (GAS) web app into a high-performance, containerized **Python 3.12 / Flask** microservice running live in production on **Google Cloud Run** under project **`meal-planning-app-507921`**.
 
-This migration achieves 100% visual, functional, and data parity with the original application while unlocking enterprise scalability, sub-second execution speeds, robust OAuth 2.0 Web Authentication with PKCE, and automated CI/CD container deployments.
+This migration achieves 100% visual, functional, and data parity with the original application while unlocking enterprise scalability, sub-second execution speeds, robust OAuth 2.0 Web Authentication with PKCE, automated CI/CD container deployments, and auto-incrementing build versioning.
 
 ### Major Evolution Milestones
 
@@ -23,22 +24,39 @@ This migration achieves 100% visual, functional, and data parity with the origin
 | **Phase 4: OAuth 2.0 & Security** | *Web Sign-In with PKCE* | Implemented Google OAuth 2.0 Web Flow with PKCE (`code_verifier` / `code_challenge`), secure session management (`SameSite=Lax`), automatic token refresh, and user profile badges. |
 | **Phase 5: Python 3.12 Upgrade** | *Runtime Modernization* | Upgraded local `.venv` and Dockerfile base container to **Python 3.12.10**, resolving `google.api_core` deprecation warnings and future-proofing the deployment. |
 | **Phase 6: Automated Testing** | *Pytest Verification* | Created 21 automated integration and unit tests validating API routes, Gemini cascade retries, shopping aisle taxonomy, and Drive storage migrations. |
+| **Phase 7: Live Cloud Run Deployment & Versioning** | *Production Release (`v2026.0.002`)* | Implemented automated Cloud Build and Cloud Run deployment pipeline via `deploy.ps1` with auto-incrementing build versioning, Google Analytics 4 telemetry, and grocery scheduling preferences. |
 
 ---
 
 ## 2. Current State of the Application
 
+### Live Production Deployment Details
+
+| Parameter | Configuration / Value |
+| :--- | :--- |
+| **Deployed Version** | `2026.0.002` |
+| **Live Service URL** | [https://meal-planning-app-w3dz7jjuna-uc.a.run.app](https://meal-planning-app-w3dz7jjuna-uc.a.run.app) |
+| **GCP Project** | `meal-planning-app-507921` |
+| **Cloud Run Service** | `meal-planning-app` |
+| **Region** | `us-central1` |
+| **Runtime Container** | `python:3.12-slim` + Gunicorn WSGI (`1 worker, 8 threads`) |
+| **Test Suite Status** | 100% passing (21 automated pytest tests in `0.42s`, 0 warnings) |
+| **Latest Deployment Date** | October 10, 2026 |
+
+### Operational Capabilities
+
 * **Stability & Automated Test Suite:** 100% green with **21 automated pytest tests** passing in `0.42s` on Python 3.12 with **0 warnings**.
 * **Authentication Infrastructure:** Fully operational Google OAuth 2.0 Web Sign-In with PKCE. Users sign in securely using their personal Google Accounts, granting granular scopes for Calendar, Drive file management, Docs, and user profile.
 * **Serverless Containerization:** Docker container built on `python:3.12-slim` using Gunicorn WSGI (`1 worker, 8 threads`), optimized for instantaneous cold starts and auto-scaling to zero on Google Cloud Run.
 * **Core Application Capabilities:**
-  1. **Calendar-First Weekly Scheduling:** Schedules dinner events on the user's primary Google Calendar with full recipe descriptions, diner-scaled ingredients, and step-by-step cooking instructions. Additionally creates an aisle-categorized morning **"🛒 Groceries"** checklist event.
+  1. **Calendar-First Weekly Scheduling:** Schedules dinner events on the user's primary Google Calendar with full recipe descriptions, diner-scaled ingredients, and step-by-step cooking instructions. Additionally creates an aisle-categorized morning **"🛒 Groceries"** checklist event with user-customizable delivery day & time.
   2. **Intelligent AI Generation Cascade:** Generates customized weekly dinner plans via Google Gemini (`gemini-3.6-flash` $\rightarrow$ `gemini-3.5-flash` $\rightarrow$ `gemini-1.5-flash`) with automatic exponential backoff for transient 503 errors and defensive prompt engineering.
   3. **On-Demand "Create Recipe" Google Docs:** Rather than generating unwanted Drive clutter on every plan approval, users can generate a beautifully formatted Google Doc on-demand for specific dishes from the **History** and **Favorites** views (`📄 Create Recipe` / `📄 Open Doc`).
   4. **Plan Customization & Reroll:** Supports rerolling individual recipes (`🔄`), locking preferred recipes (`🔒`), and 1-click insertion of starred family favorites from history.
   5. **Natural-Language Dietary Preferences:** Freeform inputs for dietary guidelines, preferred cuisines (e.g., Italian, Mexican, Mediterranean, Asian-inspired), and lifestyle dislikes without rigid button matrices.
   6. **Zero-Friction API Key Management:** Supports a default starter key for instant AI recipe generation while allowing users to save personal Google AI Studio keys in the Settings view.
   7. **Resilient Drive Database Storage:** Seamless persistence in `Automated_Meal_Planner_DB.json` on the user's private Google Drive with local fallback support (`STORAGE_MODE=drive` or `local`).
+  8. **Integrated Telemetry & Analytics:** Configured for Google Analytics 4 tracking across application views.
 
 ---
 
@@ -135,6 +153,7 @@ Meal Planning/
 │   ├── test_gemini_service.py  # Model cascade & retry tests
 │   ├── test_shopping_service.py# Grocery taxonomy & aisle sorting tests
 │   └── test_storage_service.py # Schema migrations & storage abstraction tests
+├── GEMINI.md                   # AI assistant project guidelines & conventions (Local / gitignored)
 └── docs/                       # Project documentation
     ├── EXECUTIVE_SUMMARY.md    # This document
     ├── PRODUCT_REVIEW.md       # Formal product evaluation & ship decision
@@ -162,13 +181,35 @@ Meal Planning/
 ### Completed Milestones
 - [x] Full architectural migration from Google Apps Script to Python 3.12 / Flask.
 - [x] 100% feature and visual parity verified locally.
-- [x] Google Cloud project configured (`meal-planning-app-507921`) with all 6 required APIs enabled.
+- [x] Google Cloud project configured (`meal-planning-app-507921`) with all required Cloud APIs enabled.
 - [x] Google OAuth 2.0 Web Client configured, tested, and verified with PKCE.
 - [x] Upgraded to Python 3.12 with zero warnings across all test suites.
-- [x] Deployment automation scripts verified (`deploy.ps1` / `deploy.sh`).
+- [x] Deployment automation scripts implemented and verified (`deploy.ps1` / `deploy.sh`).
+- [x] **Cloud Run Live Production Deployment:** Successfully deployed version `2026.0.002` to Google Cloud Run (`us-central1`) via `deploy.ps1`.
+- [x] **Automated Build Versioning:** Integrated auto-incrementing build numbers into `deploy.ps1` and `config.py`.
+- [x] **Subdomain Analytics & Telemetry:** Configured Google Analytics 4 tracking.
+- [x] **Grocery Scheduling Preference:** Added customizable grocery checklist delivery day & time preference.
+- [x] **Project AI Guidelines Adapted:** Created adapted [`GEMINI.md`](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/GEMINI.md) for the Cloud Run / Python architecture (git-ignored for local developer control).
 
-### Priority Backlog for Next Deployment Cycle
-- [ ] **Cloud Run Deployment Execution:** Run `.\deploy.ps1` to publish the service live and add the production URL to Authorized redirect URIs in GCP Console.
+### Immediate Focus Priorities (When Resuming Work)
+
+When resuming development on the project, prioritize the following three initiatives:
+
+1. **📋 Review and Revise `GEMINI.md` Project Guidelines**
+   - **Configuration Review:** Review and revise the newly adapted [`GEMINI.md`](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/GEMINI.md) file at the workspace root to fine-tune AI coding conventions, deployment guardrails (`deploy.ps1` / `deploy.sh`), and personal development preferences for this Cloud Run repository.
+
+2. **🧹 Clean Up Dead Code (Make the Codebase Lighter)**
+   - **Legacy Compatibility Shims:** Audit [api_client.js](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/static/js/api_client.js) to prune redundant `google.script.run` shim routines and fallback code that are no longer needed post-migration.
+   - **Frontend Pruning:** Review [styles.css](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/static/css/styles.css) and [app.js](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/static/js/app.js) for unused CSS classes, legacy selectors, obsolete DOM handlers, and redundant functions.
+   - **Backend & Service Layer:** Audit routes and services to remove unused imports, dead utility functions, or duplicate helper routines.
+   - **Container Footprint:** Keep build artifacts, scripts, and runtime packages lean to maximize cold start performance on Cloud Run.
+
+3. **✂️ Reduce Word Count on Each Tab (Intuitive, Simple & Clear Instructions)**
+   - **Tab-by-Tab Copy Audit:** Review all UI tabs in [index.html](file:///c:/Users/philp/Documents/Google%20Cloud%20Project/Meal%20Planning/templates/index.html) (**Welcome**, **Planner**, **History**, **Preferences**, **Settings**).
+   - **Concise Micro-Copy:** Replace dense informational paragraphs with short, clear, basic instructions that guide the user effortlessly.
+   - **Intuitive Visual Hierarchy:** Make actions obvious at a glance through crisp button labels, minimal instructional text, and contextual helper tooltips rather than walls of text.
+
+### Future Enhancement Backlog
 - [ ] **Intentional Leftover Engine ("Cook Once, Eat Twice"):** Add pairing logic to generate intentional batch-cooked meals (e.g., Sunday Roast Chicken $\rightarrow$ Monday Chicken Enchiladas).
 - [ ] **Print-Friendly CSS (`@media print`):** Add print styles for 1-page kitchen index cards directly from the browser.
 - [ ] **Grocery Aisle Customization:** Allow users to drag-and-drop the 5 shopping aisles to match their local supermarket layout.

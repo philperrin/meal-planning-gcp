@@ -44,3 +44,8 @@ htmlcov/
 .vscode/
 *.swp
 *.swo
+
+# AI & Assistant configs
+GEMINI.md
+AGENTS.md
+.agents/

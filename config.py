@@ -1,4 +1,4 @@
-"""
+﻿"""
 Configuration settings for the Meal Planning Assistant.
 Loads settings from environment variables and provides sensible defaults.
 """
@@ -17,7 +17,7 @@ os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 BASE_DIR = Path(__file__).resolve().parent
 
 # Application and Database Schema Versioning
-APP_VERSION = os.getenv("APP_VERSION", "2026.0.001")
+APP_VERSION = os.getenv("APP_VERSION", "2026.0.002")
 SCHEMA_VERSION = int(os.getenv("SCHEMA_VERSION", "1"))
 
 class Config:
