@@ -6,6 +6,8 @@
 // Application State
 let appState = {
   authenticated: (typeof window !== 'undefined' && window.APP_CONFIG && !!window.APP_CONFIG.authenticated) || false,
+  appVersion: (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.appVersion) || '2026.0.001',
+  schemaVersion: (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.schemaVersion) || 1,
   db: {
     preferences: {},
     mealPlan: null,
@@ -66,6 +68,7 @@ const els = {
   prefDietaryPreferences: document.getElementById('pref-dietary-preferences'),
   prefDiners: document.getElementById('pref-diners'),
   prefMealTime: document.getElementById('pref-meal-time'),
+  prefGroceryTime: document.getElementById('pref-grocery-time'),
   prefSkipWelcome: document.getElementById('setting-skip-welcome') || document.getElementById('pref-skip-welcome'),
   settingSkipWelcome: document.getElementById('setting-skip-welcome') || document.getElementById('pref-skip-welcome'),
   skipWelcomeCheckbox: document.getElementById('skip-welcome-checkbox'),
@@ -148,6 +151,14 @@ function setupNavigation() {
 function switchView(viewId) {
   if (!viewId) return;
 
+  // Track virtual page/screen switch in GA4
+  if (typeof gtag === 'function') {
+    gtag('event', 'page_view', {
+      page_title: `Meal Planner - ${viewId.charAt(0).toUpperCase() + viewId.slice(1)}`,
+      page_location: `${window.location.origin}/#${viewId}`
+    });
+  }
+
   if (!appState.authenticated && (viewId === 'history' || viewId === 'preferences' || viewId === 'settings')) {
     viewId = 'planner';
   }
@@ -208,6 +219,8 @@ function onInitialDataLoaded(data) {
   if (typeof data.authenticated !== 'undefined') {
     appState.authenticated = !!data.authenticated;
   }
+  if (data.appVersion) appState.appVersion = data.appVersion;
+  if (data.schemaVersion) appState.schemaVersion = data.schemaVersion;
   appState.db = data.db;
   appState.hasApiKey = data.hasApiKey;
   appState.apiKeyStatus = data.apiKeyStatus || {
@@ -222,6 +235,7 @@ function onInitialDataLoaded(data) {
   if (els.prefDietaryPreferences) els.prefDietaryPreferences.value = prefs.dietaryPreferences || "";
   if (els.prefDiners) els.prefDiners.value = prefs.dinersCount || 4;
   if (els.prefMealTime) els.prefMealTime.value = prefs.defaultMealTime || "5:30pm";
+  if (els.prefGroceryTime) els.prefGroceryTime.value = prefs.defaultGroceryTime || "10:00am";
 
   // Ensure Planner Tab inputs are configured
   if (els.planPreferencesInput) {
@@ -280,8 +294,57 @@ function onInitialDataLoaded(data) {
   // Update API Badge
   updateApiBadge();
 
+  // Update Version Observability UI (App Runtime vs User DB File)
+  updateVersionObservabilityUI(data);
+
   // Render Meal Plan
   renderMealPlan();
+}
+
+/**
+ * Update dual version observability display (Runtime vs Database file)
+ */
+function updateVersionObservabilityUI(data) {
+  const dbVerEl = document.getElementById('display-db-app-version');
+  const dbSchemaEl = document.getElementById('display-db-schema-badge');
+  const dbStatusEl = document.getElementById('display-db-status');
+  const appVerEl = document.getElementById('display-app-version');
+  const appBadgeEl = document.getElementById('app-version-badge');
+
+  const appVer = (data && data.appVersion) || appState.appVersion || '2026.0.001';
+  const targetSchema = (data && data.schemaVersion) || appState.schemaVersion || 1;
+
+  if (appVerEl) appVerEl.textContent = `v${appVer}`;
+  if (appBadgeEl) appBadgeEl.textContent = `App v${appVer} • Schema v${targetSchema}`;
+
+  if (!dbVerEl || !dbSchemaEl || !dbStatusEl) return;
+
+  const db = (data && data.db) || appState.db || {};
+  const dbVerInfo = (data && data.dbVersionInfo) || {};
+  const rawDbAppVer = dbVerInfo.appVersion || db.appVersion;
+  const rawDbSchemaVer = typeof dbVerInfo.schemaVersion !== 'undefined' ? dbVerInfo.schemaVersion : db.schemaVersion;
+  const lastUpdated = dbVerInfo.lastUpdated || db.lastUpdated;
+  const formattedTime = lastUpdated ? new Date(lastUpdated).toLocaleString() : null;
+
+  if (!appState.authenticated) {
+    dbVerEl.textContent = 'Default Template';
+    dbSchemaEl.textContent = `Schema v${targetSchema}`;
+    dbStatusEl.textContent = 'Sign in with Google to connect personal Drive database.';
+    return;
+  }
+
+  const dbAppVer = rawDbAppVer || 'Legacy / Unversioned';
+  const dbSchemaVer = typeof rawDbSchemaVer !== 'undefined' ? rawDbSchemaVer : 1;
+
+  dbVerEl.textContent = dbAppVer.startsWith('v') ? dbAppVer : `v${dbAppVer}`;
+  dbSchemaEl.textContent = `Schema v${dbSchemaVer}`;
+
+  const isMatch = (dbAppVer === appVer) && (Number(dbSchemaVer) === Number(targetSchema));
+  if (isMatch) {
+    dbStatusEl.innerHTML = `<span style="color:var(--accent-primary); font-weight:600;">✓ In sync</span> &bull; Synchronized with current app release${formattedTime ? ` (Last saved: ${formattedTime})` : ''}.`;
+  } else {
+    dbStatusEl.innerHTML = `<span style="color:var(--accent-secondary); font-weight:600;">ℹ️ File version: v${dbAppVer}</span> &bull; App runtime: v${appVer}${formattedTime ? ` (Last saved: ${formattedTime})` : ''}.`;
+  }
 }
 
 /**
@@ -1668,6 +1731,7 @@ function handleSavePreferences() {
     cuisinePreferences: appState.cuisinePreferences || {},
     dinersCount: els.prefDiners ? (parseInt(els.prefDiners.value, 10) || 4) : 4,
     defaultMealTime: els.prefMealTime ? (els.prefMealTime.value.trim() || "5:30pm") : "5:30pm",
+    defaultGroceryTime: els.prefGroceryTime ? (els.prefGroceryTime.value.trim() || "10:00am") : "10:00am",
     skipWelcomePage: skipPref
   };
 
@@ -2563,10 +2627,10 @@ function onHistoryLoaded(data) {
       library: data.library || {}
     };
     if (data.library) {
-      appState.db.recipeLibrary = Object.assign({}, appState.db.recipeLibrary, data.library);
+      appState.db.recipeLibrary = Object.assign({}, data.library);
     }
     if (data.ratings) {
-      appState.db.recipeRatings = Object.assign({}, appState.db.recipeRatings, data.ratings);
+      appState.db.recipeRatings = Object.assign({}, data.ratings);
     }
   }
 
@@ -2739,6 +2803,9 @@ async function handleConfirmDeleteRecipes() {
   try {
     const res = await apiClient.deleteRecipes(selected);
     if (res && res.success) {
+      if (res.db) {
+        appState.db = res.db;
+      }
       const deletedCount = selected.length;
       appState.reusedRecipes.clear();
       closeDeleteConfirmationModal();

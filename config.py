@@ -16,7 +16,13 @@ os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
 BASE_DIR = Path(__file__).resolve().parent
 
+# Application and Database Schema Versioning
+APP_VERSION = os.getenv("APP_VERSION", "2026.0.001")
+SCHEMA_VERSION = int(os.getenv("SCHEMA_VERSION", "1"))
+
 class Config:
+    APP_VERSION = APP_VERSION
+    SCHEMA_VERSION = SCHEMA_VERSION
     PROJECT_ID = os.getenv("PROJECT_ID", "meal-planning-app-507921")
     PORT = int(os.getenv("PORT", 8080))
     FLASK_ENV = os.getenv("FLASK_ENV", "production")
@@ -40,6 +46,9 @@ class Config:
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
     GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "").strip()
+
+    # Google Analytics 4
+    GA_MEASUREMENT_ID = os.getenv("GA_MEASUREMENT_ID", "").strip()
     
     # OAuth Scopes required for Calendar, Drive file access, and User Profile
     GOOGLE_OAUTH_SCOPES = [

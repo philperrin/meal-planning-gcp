@@ -4,6 +4,7 @@ Faithfully ported from Google Apps Script Code.gs and JavaScript.html.
 """
 
 from datetime import datetime, timezone
+from config import APP_VERSION, SCHEMA_VERSION
 
 AISLE_CATEGORIES = [
     "🥬 Produce",
@@ -40,12 +41,15 @@ CUISINES = [
 def get_default_db():
     """Generates the initial default database schema matching Apps Script."""
     return {
+        "schemaVersion": SCHEMA_VERSION,
+        "appVersion": APP_VERSION,
         "preferences": {
             "allergies": "",
             "dietaryPreferences": "",
             "cuisinePreferences": {},
             "dinersCount": 4,
             "defaultMealTime": "5:30pm",
+            "defaultGroceryTime": "10:00am",
             "skipWelcomePage": False,
             "pantryIngredients": [],
         },

@@ -4,6 +4,7 @@ Unit tests for storage_service: schema migrations and database operations.
 
 from services.storage_service import migrate_db_schema, LocalStorageProvider, delete_recipes_from_db
 from core.config_keys import get_default_db
+from config import Config
 
 
 def test_migrate_db_schema_restrictions_to_dietary():
@@ -19,6 +20,7 @@ def test_migrate_db_schema_restrictions_to_dietary():
     assert migrated["preferences"]["dietaryPreferences"] == "No red meat, low sodium"
     assert migrated["preferences"]["dinersCount"] == 4
     assert migrated["preferences"]["defaultMealTime"] == "5:30pm"
+    assert migrated["preferences"]["defaultGroceryTime"] == "10:00am"
     assert migrated["preferences"]["skipWelcomePage"] is False
 
 def test_migrate_recipe_library_from_array():
@@ -59,6 +61,7 @@ def test_local_storage_provider_lifecycle(temp_db_path):
     assert db["preferences"]["allergies"] == ""
     assert db["preferences"]["dietaryPreferences"] == ""
     assert db["preferences"]["defaultMealTime"] == "5:30pm"
+    assert db["preferences"]["defaultGroceryTime"] == "10:00am"
     
     # 2. Modify and save
     db["preferences"]["dinersCount"] = 6
@@ -91,4 +94,85 @@ def test_delete_recipes_from_db_and_prevent_migration_resurrection():
     # Verify migration does not resurrect Recipe A
     migrated, _ = migrate_db_schema(updated_db)
     assert "Recipe A" not in migrated["recipeLibrary"]
+
+def test_delete_recipes_from_db_with_active_meal_plan():
+    db = {
+        "recipeLibrary": {
+            "Recipe A": {"name": "Recipe A", "docId": "doc-123"},
+            "Recipe B": {"name": "Recipe B", "docId": "doc-456"}
+        },
+        "recipeRatings": {
+            "Recipe A": {"isFavorite": True, "rating": 5}
+        },
+        "mealPlan": {
+            "recipes": [
+                {"name": "Recipe A"},
+                {"name": "Recipe B"}
+            ]
+        }
+    }
+
+    updated_db, doc_ids = delete_recipes_from_db(db, ["Recipe A"])
+    assert "Recipe A" not in updated_db["recipeLibrary"]
+    assert "Recipe A" not in updated_db["recipeRatings"]
+    assert not any(r.get("name") == "Recipe A" for r in updated_db["mealPlan"]["recipes"])
+    assert "Recipe A" in updated_db["deletedRecipes"]
+
+    # Verify schema migration NEVER resurrects Recipe A even if somehow in mealPlan
+    migrated, _ = migrate_db_schema(updated_db)
+    assert "Recipe A" not in migrated["recipeLibrary"]
+
+
+def test_default_db_contains_version_metadata():
+    db = get_default_db()
+    assert db.get("schemaVersion") == Config.SCHEMA_VERSION
+    assert db.get("appVersion") == Config.APP_VERSION
+
+
+def test_migrate_db_schema_adds_version_identifiers():
+    unversioned_db = {
+        "preferences": {
+            "allergies": "",
+            "dietaryPreferences": "",
+            "dinersCount": 4,
+            "defaultMealTime": "5:30pm",
+            "defaultGroceryTime": "10:00am",
+            "skipWelcomePage": False,
+            "cuisinePreferences": {},
+            "pantryIngredients": []
+        },
+        "recipeLibrary": {},
+        "recipeRatings": {},
+        "mealPlan": None
+    }
+    migrated, updated = migrate_db_schema(unversioned_db)
+    assert updated is True
+    assert migrated["schemaVersion"] == Config.SCHEMA_VERSION
+    assert migrated["appVersion"] == Config.APP_VERSION
+
+    # Second migration with versions present should not trigger an update
+    second_pass, second_updated = migrate_db_schema(migrated)
+    assert second_updated is False
+    assert second_pass["schemaVersion"] == Config.SCHEMA_VERSION
+    assert second_pass["appVersion"] == Config.APP_VERSION
+
+
+def test_storage_provider_saves_version_identifiers(temp_db_path):
+    provider = LocalStorageProvider(temp_db_path)
+    db = provider.load_db()
+    assert db.get("schemaVersion") == Config.SCHEMA_VERSION
+    assert db.get("appVersion") == Config.APP_VERSION
+
+    # Modify and save
+    db["preferences"]["dinersCount"] = 5
+    provider.save_db(db)
+
+    # Re-read raw content
+    import json
+    with open(temp_db_path, "r", encoding="utf-8") as f:
+        saved_raw = json.load(f)
+    assert saved_raw["schemaVersion"] == Config.SCHEMA_VERSION
+    assert saved_raw["appVersion"] == Config.APP_VERSION
+
+
 

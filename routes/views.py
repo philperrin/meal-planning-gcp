@@ -28,6 +28,9 @@ def index():
         authenticated=authenticated,
         user=user,
         project_id=Config.PROJECT_ID,
+        app_version=Config.APP_VERSION,
+        schema_version=Config.SCHEMA_VERSION,
+        ga_measurement_id=Config.GA_MEASUREMENT_ID,
     )
 
 @views_bp.route("/auth/login")

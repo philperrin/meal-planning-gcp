@@ -65,6 +65,17 @@ def load_app_data():
     return jsonify({
         "success": True,
         "db": db,
+        "appVersion": Config.APP_VERSION,
+        "schemaVersion": Config.SCHEMA_VERSION,
+        "dbVersionInfo": {
+            "appVersion": db.get("appVersion", "Legacy / Unversioned"),
+            "schemaVersion": db.get("schemaVersion", 1),
+            "lastUpdated": db.get("lastUpdated"),
+            "isMatch": (
+                db.get("appVersion") == Config.APP_VERSION
+                and db.get("schemaVersion") == Config.SCHEMA_VERSION
+            )
+        },
         "hasApiKey": key_type != "none",
         "apiKeyStatus": {
             "hasPersonalKey": bool(personal_key),
@@ -90,6 +101,7 @@ def save_preferences():
         "cuisinePreferences": pref_data.get("cuisinePreferences", {}) if isinstance(pref_data.get("cuisinePreferences"), dict) else {},
         "dinersCount": int(pref_data.get("dinersCount", 4)),
         "defaultMealTime": pref_data.get("defaultMealTime", "5:30pm"),
+        "defaultGroceryTime": pref_data.get("defaultGroceryTime", "10:00am"),
         "skipWelcomePage": bool(pref_data.get("skipWelcomePage", False)),
         "pantryIngredients": pref_data.get("pantryIngredients", db.get("preferences", {}).get("pantryIngredients", []))
     }
@@ -722,6 +734,11 @@ def save_imported_recipe():
             "rating": 5,
             "favoritedAt": datetime.now(timezone.utc).isoformat()
         }
+
+    # If this recipe was previously deleted, remove it from deletedRecipes tombstone list
+    if "deletedRecipes" in db and isinstance(db["deletedRecipes"], list):
+        if recipe_name in db["deletedRecipes"]:
+            db["deletedRecipes"].remove(recipe_name)
 
     storage.save_db(db)
     return jsonify({

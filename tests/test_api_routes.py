@@ -4,6 +4,7 @@ Integration tests for Flask REST API routes (/api/*).
 
 import json
 from unittest.mock import patch
+from config import Config
 
 def test_index_route_unauthenticated(client):
     """When logged out, navigation tabs (Planner, History, Preferences, Settings) and Generate Meal Plans card must not appear."""
@@ -31,6 +32,13 @@ def test_index_route_unauthenticated(client):
     assert "will not save this plan or add events to your Google Calendar" in html
 
 
+    # Verify version identifiers rendered in index HTML
+    assert Config.APP_VERSION in html
+    assert f"Schema v{Config.SCHEMA_VERSION}" in html
+    assert f'appVersion: "{Config.APP_VERSION}"' in html
+    assert f'schemaVersion: {Config.SCHEMA_VERSION}' in html
+
+
 def test_index_route_authenticated(auth_client):
     """When logged in, all navigation tabs and welcome step cards must be present."""
     response = auth_client.get("/")
@@ -42,6 +50,27 @@ def test_index_route_authenticated(auth_client):
     assert 'data-view="settings"' in html
     assert "Sign Out" in html
     assert "Generate Meal Plans" in html
+    assert Config.APP_VERSION in html
+
+def test_google_analytics_rendering(client, monkeypatch):
+    """Verify that GA4 snippet renders conditionally based on GA_MEASUREMENT_ID."""
+    from config import Config
+
+    # Case 1: GA_MEASUREMENT_ID is set
+    monkeypatch.setattr(Config, "GA_MEASUREMENT_ID", "G-TEST999XYZ")
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    assert "https://www.googletagmanager.com/gtag/js?id=G-TEST999XYZ" in html
+    assert "gtag('config', 'G-TEST999XYZ'" in html
+
+    # Case 2: GA_MEASUREMENT_ID is empty
+    monkeypatch.setattr(Config, "GA_MEASUREMENT_ID", "")
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html_empty = resp.get_data(as_text=True)
+    assert "googletagmanager.com" not in html_empty
+    assert "G-TEST999XYZ" not in html_empty
 
 def test_auth_status_route(client):
     response = client.get("/auth/status")
@@ -57,6 +86,14 @@ def test_api_load_data_unauthenticated(client):
     assert data["success"] is True
     assert "db" in data
     assert "preferences" in data["db"]
+    assert data["db"]["schemaVersion"] == Config.SCHEMA_VERSION
+    assert data["db"]["appVersion"] == Config.APP_VERSION
+    assert data["schemaVersion"] == Config.SCHEMA_VERSION
+    assert data["appVersion"] == Config.APP_VERSION
+    assert "dbVersionInfo" in data
+    assert data["dbVersionInfo"]["schemaVersion"] == Config.SCHEMA_VERSION
+    assert data["dbVersionInfo"]["appVersion"] == Config.APP_VERSION
+    assert data["dbVersionInfo"]["isMatch"] is True
     assert data["authenticated"] is False
     assert data["hasApiKey"] is True
     assert data["apiKeyStatus"]["activeKeyType"] == "shared"
@@ -67,6 +104,14 @@ def test_api_load_data_authenticated(auth_client):
     data = response.get_json()
     assert data["success"] is True
     assert data["authenticated"] is True
+    assert data["schemaVersion"] == Config.SCHEMA_VERSION
+    assert data["appVersion"] == Config.APP_VERSION
+    assert data["db"]["schemaVersion"] == Config.SCHEMA_VERSION
+    assert data["db"]["appVersion"] == Config.APP_VERSION
+    assert "dbVersionInfo" in data
+    assert data["dbVersionInfo"]["schemaVersion"] == Config.SCHEMA_VERSION
+    assert data["dbVersionInfo"]["appVersion"] == Config.APP_VERSION
+    assert data["dbVersionInfo"]["isMatch"] is True
 
 def test_unauthenticated_meal_plan_generation(client, sample_recipes):
     """
@@ -129,6 +174,7 @@ def test_api_save_preferences(auth_client):
         "dietaryPreferences": "Mediterranean focus, high olive oil",
         "dinersCount": 4,
         "defaultMealTime": "07:00 PM",
+        "defaultGroceryTime": "10:30 AM",
         "skipWelcomePage": True
     }
     response = auth_client.post("/api/preferences", json=payload)
@@ -140,6 +186,7 @@ def test_api_save_preferences(auth_client):
     assert prefs["dietaryPreferences"] == "Mediterranean focus, high olive oil"
     assert prefs["dinersCount"] == 4
     assert prefs["defaultMealTime"] == "07:00 PM"
+    assert prefs["defaultGroceryTime"] == "10:30 AM"
     assert prefs["skipWelcomePage"] is True
 
 def test_api_skip_welcome_fast_toggle(auth_client):

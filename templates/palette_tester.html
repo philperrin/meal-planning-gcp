@@ -1578,7 +1578,7 @@
               placeholder="e.g., Prefer Mediterranean, Mexican, and Italian cuisines. High protein, lean meats, plenty of vegetables..."></textarea>
           </div>
 
-          <!-- Diner Count and daily prep time row -->
+          <!-- Diner Count, daily prep time, and grocery time row -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-top: 12px;">
             <div class="form-group">
               <label for="pref-diners">Number of Diners (Quantity)</label>
@@ -1588,8 +1588,14 @@
 
             <div class="form-group">
               <label for="pref-meal-time">Default Daily Prep Time</label>
-              <div class="input-desc">Specify default time for calendar events (AM/PM).</div>
+              <div class="input-desc">Specify default time for meal calendar events (AM/PM).</div>
               <input type="text" id="pref-meal-time" placeholder="e.g., 5:30pm" value="5:30pm" style="width: 150px;">
+            </div>
+
+            <div class="form-group">
+              <label for="pref-grocery-time">Default Grocery Time</label>
+              <div class="input-desc">Specify default time for grocery calendar event (AM/PM).</div>
+              <input type="text" id="pref-grocery-time" placeholder="e.g., 10:00am" value="10:00am" style="width: 150px;">
             </div>
           </div>
 
@@ -1634,7 +1640,12 @@
         </div>
 
         <div class="panel">
-          <h3 class="panel-title" style="font-size: 16px; margin-bottom: 12px;">App Deployment & Information</h3>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h3 class="panel-title" style="font-size: 16px; margin: 0;">App Deployment & Information</h3>
+            <span style="font-size: 12px; font-weight: 500; color: var(--accent-secondary); background: rgba(212, 163, 115, 0.12); padding: 2px 8px; border-radius: 6px; letter-spacing: 0.3px;">
+              App v{{ app_version | default('2026.0.001') }} &bull; Schema v{{ schema_version | default(1) }}
+            </span>
+          </div>
           <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
             This system runs entirely serverless within your Google Account.
             All recipe details and meal history are saved securely in your Google Drive inside the file

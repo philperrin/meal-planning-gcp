@@ -9,6 +9,19 @@
     href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🍽️%3C/text%3E%3C/svg%3E">
   <!-- Include Premium CSS Stylesheet -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  {% if ga_measurement_id %}
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_measurement_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', '{{ ga_measurement_id }}', {
+      send_page_view: true
+    });
+  </script>
+  {% endif %}
+
 </head>
 
 <body class="{% if not (authenticated and user) %}logged-out{% endif %}">
@@ -231,9 +244,7 @@
           <div class="form-group" style="margin-bottom: 20px;">
             <h2 class="panel-title" style="margin-bottom: 4px;">Build Your Mealplan</h2>
             <label for="plan-preferences-input">Preferences for this week's plan</label>
-            <div class="input-desc">Input specific ideas or needs for certain meals this week (e.g. 'I'd like one
-              pizza
-              night that includes margherita pizza')</div>
+            <div class="input-desc">Input specific ideas or needs for this meal plan.</div>
             <textarea id="plan-preferences-input" rows="2" style="min-height: 70px;"
               placeholder="e.g., I'd like one pizza night that includes margherita pizza..."></textarea>
           </div>
@@ -319,7 +330,8 @@
                 <span class="subtab-badge" id="badge-favorites-count">0</span>
               </button>
             </div>
-            <button type="button" class="btn btn-secondary history-import-btn" id="btn-open-import" onclick="openImportRecipeModal()">
+            <button type="button" class="btn btn-secondary history-import-btn" id="btn-open-import"
+              onclick="openImportRecipeModal()">
               <span>📥 Import Recipe</span>
             </button>
           </div>
@@ -331,8 +343,10 @@
               <span id="reuse-banner-text"><strong>0 recipes</strong> selected</span>
             </div>
             <div class="reuse-banner-actions">
-              <button type="button" class="btn btn-sm btn-gold" onclick="switchView('planner')">🗓️ Open in Planner</button>
-              <button type="button" class="btn btn-sm btn-danger" onclick="handleOpenDeleteConfirmation()">🗑️ Remove from History</button>
+              <button type="button" class="btn btn-sm btn-gold" onclick="switchView('planner')">🗓️ Open in
+                Planner</button>
+              <button type="button" class="btn btn-sm btn-danger" onclick="handleOpenDeleteConfirmation()">🗑️ Remove
+                from History</button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="clearReusedRecipes()">✕ Clear</button>
             </div>
           </div>
@@ -367,7 +381,7 @@
               placeholder="e.g., Prefer Mediterranean, Mexican, and Italian cuisines. High protein, lean meats, plenty of vegetables..."></textarea>
           </div>
 
-          <!-- Diner Count and daily prep time row -->
+          <!-- Diner Count, daily prep time, and grocery time row -->
           <div
             style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-top: 12px;">
             <div class="form-group">
@@ -378,8 +392,15 @@
 
             <div class="form-group">
               <label for="pref-meal-time">Default Daily Prep Time</label>
-              <div class="input-desc">Specify default time for calendar events (AM/PM).</div>
+              <div class="input-desc">Specify default time for meal calendar events (AM/PM).</div>
               <input type="text" id="pref-meal-time" placeholder="e.g., 5:30pm" value="5:30pm" style="width: 160px;">
+            </div>
+
+            <div class="form-group">
+              <label for="pref-grocery-time">Default Grocery Time</label>
+              <div class="input-desc">Specify default time for grocery calendar event (AM/PM).</div>
+              <input type="text" id="pref-grocery-time" placeholder="e.g., 10:00am" value="10:00am"
+                style="width: 160px;">
             </div>
           </div>
 
@@ -427,7 +448,63 @@
         </div>
 
         <div class="panel">
-          <h3 class="panel-title" style="font-size: 16px; margin-bottom: 12px;">App Deployment & Information</h3>
+          <div
+            style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+            <h3 class="panel-title" style="font-size: 16px; margin: 0;">App Deployment & Information</h3>
+            <span id="app-version-badge"
+              style="font-size: 12px; font-weight: 500; color: var(--accent-secondary); background: rgba(212, 163, 115, 0.12); padding: 2px 8px; border-radius: 6px; letter-spacing: 0.3px;">
+              App v{{ app_version }} &bull; Schema v{{ schema_version }}
+            </span>
+          </div>
+
+          <!-- Dual Version Observability Grid -->
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 18px;">
+            <!-- Application Runtime Card -->
+            <div
+              style="background: var(--bg-primary); border: 1px solid var(--border-card); border-radius: var(--radius-sm, 8px); padding: 14px 16px;">
+              <div
+                style="font-size: 11px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 6px;">
+                Application Version Details
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span id="display-app-version" style="font-size: 15px; font-weight: 700; color: var(--text-primary);">
+                  v{{ app_version }}
+                </span>
+                <span
+                  style="font-size: 11px; font-weight: 500; color: var(--accent-primary); background: rgba(86, 101, 85, 0.12); padding: 2px 6px; border-radius: 4px;">
+                  Schema v{{ schema_version }}
+                </span>
+              </div>
+              <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+                Current server version running on Google Cloud Run.
+              </div>
+            </div>
+
+            <!-- User Database File Card -->
+            <div
+              style="background: var(--bg-primary); border: 1px solid var(--border-card); border-radius: var(--radius-sm, 8px); padding: 14px 16px;">
+              <div
+                style="font-size: 11px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 6px;">
+                Connected Database (<span style="color:var(--accent-secondary);">Automated_Meal_Planner_DB.json</span>)
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span id="display-db-app-version"
+                  style="font-size: 15px; font-weight: 700; color: var(--text-primary);">
+                  {{ 'Checking...' if (authenticated and user) else 'Default Template' }}
+                </span>
+                <span id="display-db-schema-badge"
+                  style="font-size: 11px; font-weight: 500; color: var(--accent-secondary); background: rgba(170, 119, 85, 0.12); padding: 2px 6px; border-radius: 4px;">
+                  Schema v{{ schema_version }}
+                </span>
+              </div>
+              <div id="display-db-status" style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+                {{ 'Connecting to Google Drive...' if (authenticated and user) else 'Sign in with Google to connect
+                personal Drive database.' }}
+              </div>
+            </div>
+          </div>
+
           <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
             This system runs entirely serverless within your Google Account.
             All recipe details and meal history are saved securely in your Google Drive inside the file
@@ -521,14 +598,16 @@
     {% endif %}
 
     <!-- MODAL: CONFIRM RECIPE DELETION -->
-    <div class="modal-overlay" id="modal-confirm-delete" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+    <div class="modal-overlay" id="modal-confirm-delete" style="display: none;" role="dialog" aria-modal="true"
+      aria-labelledby="delete-modal-title">
       <div class="modal-card">
         <div class="modal-header">
           <div class="modal-title-row">
             <span class="modal-icon">🗑️</span>
             <h3 class="modal-title" id="delete-modal-title">Remove Recipes from History?</h3>
           </div>
-          <button type="button" class="modal-close" onclick="closeDeleteConfirmationModal()" aria-label="Close dialog">✕</button>
+          <button type="button" class="modal-close" onclick="closeDeleteConfirmationModal()"
+            aria-label="Close dialog">✕</button>
         </div>
         <div class="modal-body">
           <p id="delete-modal-lead" style="margin-bottom: 12px; font-size: 14px; line-height: 1.5;">
@@ -540,7 +619,8 @@
           <div class="modal-warning-box">
             <span style="font-size: 18px;">⚠️</span>
             <div style="font-size: 13px; line-height: 1.4; color: var(--text-secondary);">
-              This will remove them from your Recipe Library and send any generated Google Docs for these recipes to your Google Drive Trash.
+              This will remove them from your Recipe Library and send any generated Google Docs for these recipes to
+              your Google Drive Trash.
             </div>
           </div>
         </div>
@@ -554,7 +634,8 @@
     </div>
 
     <!-- MODAL: IMPORT RECIPE VIA GEMINI AI -->
-    <div class="modal-overlay" id="modal-import-recipe" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+    <div class="modal-overlay" id="modal-import-recipe" style="display: none;" role="dialog" aria-modal="true"
+      aria-labelledby="import-modal-title">
       <div class="modal-card modal-card-large">
         <div class="modal-header">
           <div class="modal-title-row">
@@ -566,20 +647,26 @@
               </div>
             </div>
           </div>
-          <button type="button" class="modal-close" onclick="closeImportRecipeModal()" aria-label="Close modal">✕</button>
+          <button type="button" class="modal-close" onclick="closeImportRecipeModal()"
+            aria-label="Close modal">✕</button>
         </div>
 
         <!-- PHASE 1: INPUT VIEW -->
         <div class="modal-body" id="import-step-input">
           <div class="form-group" style="margin-bottom: 16px;">
-            <label for="import-recipe-title">Recipe Title <span style="font-weight: normal; color: var(--text-muted);">(Optional override)</span></label>
-            <input type="text" id="import-recipe-title" placeholder="e.g., Mom's Lasagna (or leave blank to let AI deduce)">
+            <label for="import-recipe-title">Recipe Title <span
+                style="font-weight: normal; color: var(--text-muted);">(Optional override)</span></label>
+            <input type="text" id="import-recipe-title"
+              placeholder="e.g., Mom's Lasagna (or leave blank to let AI deduce)">
           </div>
 
           <div class="form-group" style="margin-bottom: 16px;">
-            <label for="import-recipe-text">Recipe Text or Notes <span style="color: var(--accent-gold);">*</span></label>
-            <div class="input-desc" style="margin-bottom: 6px;">Paste ingredients, instructions, cooking times, or blog content.</div>
-            <textarea id="import-recipe-text" rows="8" style="min-height: 160px; font-family: inherit; font-size: 13px;" placeholder="e.g.
+            <label for="import-recipe-text">Recipe Text or Notes <span
+                style="color: var(--accent-gold);">*</span></label>
+            <div class="input-desc" style="margin-bottom: 6px;">Paste ingredients, instructions, cooking times, or blog
+              content.</div>
+            <textarea id="import-recipe-text" rows="8" style="min-height: 160px; font-family: inherit; font-size: 13px;"
+              placeholder="e.g.
 Ingredients:
 - 1 lb ground beef
 - 1 box lasagna noodles
@@ -590,7 +677,8 @@ Instructions:
           </div>
 
           <div class="form-group" style="margin-bottom: 4px;">
-            <label class="checkbox-label" for="import-recipe-favorite" style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 14px; font-weight: 500;">
+            <label class="checkbox-label" for="import-recipe-favorite"
+              style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 14px; font-weight: 500;">
               <input type="checkbox" id="import-recipe-favorite" style="width: auto; cursor: pointer;">
               <span>⭐ Mark as Family Favorite immediately</span>
             </label>
@@ -600,7 +688,7 @@ Instructions:
         <!-- PHASE 2: PREVIEW VIEW -->
         <div class="modal-body" id="import-step-preview" style="display: none;">
           <div class="import-preview-badge">✨ Gemini AI Structured Preview</div>
-          
+
           <div class="form-group" style="margin-bottom: 14px;">
             <label for="preview-recipe-name">Dish Name</label>
             <input type="text" id="preview-recipe-name" style="font-weight: 600;">
@@ -662,7 +750,9 @@ Instructions:
 
   <script>
     window.APP_CONFIG = {
-      authenticated: {{ 'true' if (authenticated and user) else 'false' }}
+      authenticated: {{ 'true' if (authenticated and user) else 'false' }},
+      appVersion: "{{ app_version }}",
+      schemaVersion: {{ schema_version }}
     };
   </script>
   <!-- Include Client-Side JS -->

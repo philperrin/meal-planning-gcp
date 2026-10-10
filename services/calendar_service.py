@@ -18,12 +18,12 @@ from core.exceptions import AppError
 
 logger = logging.getLogger(__name__)
 
-def parse_time_str(time_str: str) -> Tuple[int, int]:
+def parse_time_str(time_str: str, default: Tuple[int, int] = (17, 30)) -> Tuple[int, int]:
     """
     Parses time string supporting AM/PM formats as well as 24-hour.
-    Defaults to 17:30 (5:30 PM).
+    Defaults to provided default tuple (hours, minutes).
     """
-    default_hours, default_minutes = 17, 30
+    default_hours, default_minutes = default
     if not time_str:
         return default_hours, default_minutes
 
@@ -45,6 +45,17 @@ def parse_time_str(time_str: str) -> Tuple[int, int]:
             return hours, minutes
         except ValueError:
             pass
+    elif len(parts) == 1 and parts[0]:
+        try:
+            hours = int(parts[0])
+            minutes = 0
+            if is_pm and hours < 12:
+                hours += 12
+            elif is_am and hours == 12:
+                hours = 0
+            return hours, minutes
+        except ValueError:
+            pass
 
     return default_hours, default_minutes
 
@@ -52,19 +63,31 @@ def schedule_approved_meals(
     approved_meals_with_dates: List[Dict[str, str]],
     all_recipes: List[Dict[str, Any]],
     preferences: Dict[str, Any],
-    credentials: Credentials
+    credentials: Credentials,
+    current_time: datetime = None
 ) -> Dict[str, Any]:
     """
     Schedules individual dinner events on user's primary Google Calendar and adds
-    the aisle-categorized '🛒 Groceries' event on the morning of the earliest meal.
+    the aisle-categorized '🛒 Groceries' event at the next instance of the preferred grocery time.
     """
     if not credentials:
         raise AppError("Google OAuth credentials are required to schedule calendar events.")
 
     cal_service = build("calendar", "v3", credentials=credentials, cache_discovery=False)
+
+    cal_timezone = "America/Denver"
+    try:
+        cal_meta = cal_service.calendars().get(calendarId="primary").execute()
+        if isinstance(cal_meta, dict) and cal_meta.get("timeZone"):
+            cal_timezone = cal_meta["timeZone"]
+    except Exception as e:
+        logger.debug(f"Could not fetch primary calendar timezone, defaulting to America/Denver: {e}")
+
     diners_count = preferences.get("dinersCount", 4)
     default_meal_time = preferences.get("defaultMealTime", "5:30pm")
-    hours, minutes = parse_time_str(default_meal_time)
+    default_grocery_time = preferences.get("defaultGroceryTime", "10:00am")
+    hours, minutes = parse_time_str(default_meal_time, default=(17, 30))
+    g_hours, g_minutes = parse_time_str(default_grocery_time, default=(10, 0))
 
     approved_map = {item["name"]: item["date"] for item in approved_meals_with_dates if "name" in item and "date" in item}
     selected_recipes: List[Dict[str, Any]] = []
@@ -121,11 +144,11 @@ def schedule_approved_meals(
             "description": description,
             "start": {
                 "dateTime": start_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-                "timeZone": "America/Denver",
+                "timeZone": cal_timezone,
             },
             "end": {
                 "dateTime": end_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-                "timeZone": "America/Denver",
+                "timeZone": cal_timezone,
             },
         }
 
@@ -136,16 +159,31 @@ def schedule_approved_meals(
             logger.error(f"Failed to create calendar event for '{recipe.get('name')}': {err}")
             raise AppError(f"Google Calendar API error: {err}")
 
-    # 2. Consolidated Shopping List & Morning Groceries Event
+    # 2. Consolidated Shopping List & Grocery Event
     raw_recipes = [item["recipe"] for item in selected_recipes]
     consolidated_list = consolidate_shopping_list(raw_recipes)
 
     dates = sorted([item["dateVal"] for item in selected_recipes])
     earliest_date_val = dates[0] if dates else datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    e_parts = [int(p) for p in earliest_date_val.split("-")]
 
-    grocery_start_dt = datetime(e_parts[0], e_parts[1], e_parts[2], 9, 0, 0)
-    grocery_end_dt = datetime(e_parts[0], e_parts[1], e_parts[2], 10, 0, 0)
+    # Determine reference 'now' in calendar's timezone
+    if current_time is not None:
+        now_dt = current_time
+    else:
+        try:
+            from zoneinfo import ZoneInfo
+            now_dt = datetime.now(ZoneInfo(cal_timezone))
+        except Exception:
+            now_dt = datetime.now()
+
+    # Calculate next instance of the grocery time
+    candidate_dt = now_dt.replace(hour=g_hours, minute=g_minutes, second=0, microsecond=0)
+    if candidate_dt <= now_dt:
+        grocery_start_dt = candidate_dt + timedelta(days=1)
+    else:
+        grocery_start_dt = candidate_dt
+
+    grocery_end_dt = grocery_start_dt + timedelta(hours=1)
 
     categorized_items: Dict[str, List[Dict[str, Any]]] = {cat: [] for cat in AISLE_CATEGORIES}
     for item in consolidated_list:
@@ -181,11 +219,11 @@ def schedule_approved_meals(
         "description": "\n".join(grocery_desc_lines),
         "start": {
             "dateTime": grocery_start_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-            "timeZone": "America/Denver",
+            "timeZone": cal_timezone,
         },
         "end": {
             "dateTime": grocery_end_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-            "timeZone": "America/Denver",
+            "timeZone": cal_timezone,
         },
     }
 

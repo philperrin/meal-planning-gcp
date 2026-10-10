@@ -27,6 +27,25 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
     Replicates Code.gs lines 55-155.
     """
     updated = False
+
+    # 0. Version identifiers: detect legacy unversioned files or schema drift
+    if "schemaVersion" not in db:
+        logger.info(
+            f"Migrating unversioned DB to schemaVersion={Config.SCHEMA_VERSION}, appVersion={Config.APP_VERSION}"
+        )
+        db["schemaVersion"] = Config.SCHEMA_VERSION
+        updated = True
+    elif db["schemaVersion"] != Config.SCHEMA_VERSION:
+        logger.info(
+            f"Migrating DB from schemaVersion={db['schemaVersion']} to {Config.SCHEMA_VERSION}"
+        )
+        db["schemaVersion"] = Config.SCHEMA_VERSION
+        updated = True
+
+    if "appVersion" not in db:
+        db["appVersion"] = Config.APP_VERSION
+        updated = True
+
     if not isinstance(db.get("preferences"), dict):
         db["preferences"] = {}
         updated = True
@@ -58,6 +77,10 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
         prefs["defaultMealTime"] = "5:30pm"
         updated = True
 
+    if "defaultGroceryTime" not in prefs:
+        prefs["defaultGroceryTime"] = "10:00am"
+        updated = True
+
     if "skipWelcomePage" not in prefs:
         prefs["skipWelcomePage"] = False
         updated = True
@@ -84,13 +107,14 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
         updated = True
 
     library = db["recipeLibrary"]
+    deleted_recipes = set(db.get("deletedRecipes", []) or [])
 
-    # Auto-ingest any recipes in active meal plan if missing from recipeLibrary
+    # Auto-ingest any recipes in active meal plan if missing from recipeLibrary (unless deliberately deleted)
     meal_plan = db.get("mealPlan")
     if meal_plan and isinstance(meal_plan.get("recipes"), list):
         plan_date = meal_plan.get("generatedAt", datetime.now(timezone.utc).isoformat())[:10]
         for r in meal_plan["recipes"]:
-            if isinstance(r, dict) and r.get("name") and r["name"] not in library:
+            if isinstance(r, dict) and r.get("name") and r["name"] not in library and r["name"] not in deleted_recipes:
                 library[r["name"]] = {
                     "name": r["name"],
                     "description": r.get("description", ""),
@@ -105,12 +129,12 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
                 }
                 updated = True
 
-    # Auto-ingest recipes from db.recipeRatings if missing from recipeLibrary
+    # Auto-ingest recipes from db.recipeRatings if missing from recipeLibrary (unless deliberately deleted)
     ratings = db.get("recipeRatings", {})
     if isinstance(ratings, dict):
         now_date = datetime.now(timezone.utc).isoformat()[:10]
         for r_name in ratings:
-            if r_name and r_name not in library:
+            if r_name and r_name not in library and r_name not in deleted_recipes:
                 library[r_name] = {
                     "name": r_name,
                     "description": "Favorite family recipe.",
@@ -129,13 +153,17 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
 
 def delete_recipes_from_db(db: Dict[str, Any], recipe_names: List[str]) -> Tuple[Dict[str, Any], List[str]]:
     """
-    Deletes recipes from recipeLibrary and recipeRatings in the DB.
+    Deletes recipes from recipeLibrary, recipeRatings, and active mealPlan in the DB.
+    Records deleted recipe names in db["deletedRecipes"] to permanently prevent schema migration resurrection.
     Returns the modified DB and a list of associated docIds that should be trashed in Google Drive.
     """
     if not isinstance(recipe_names, list) or not recipe_names:
         return db, []
 
+    names_set = set(recipe_names)
     doc_ids_to_trash: List[str] = []
+
+    # 1. Purge from recipeLibrary
     recipe_library = db.get("recipeLibrary")
     if isinstance(recipe_library, dict):
         for name in recipe_names:
@@ -146,10 +174,26 @@ def delete_recipes_from_db(db: Dict[str, Any], recipe_names: List[str]) -> Tuple
                     if doc_id and doc_id not in doc_ids_to_trash:
                         doc_ids_to_trash.append(doc_id)
 
+    # 2. Purge from recipeRatings
     recipe_ratings = db.get("recipeRatings")
     if isinstance(recipe_ratings, dict):
         for name in recipe_names:
             recipe_ratings.pop(name, None)
+
+    # 3. Purge from active meal plan recipes so migration doesn't resurrect them
+    meal_plan = db.get("mealPlan")
+    if isinstance(meal_plan, dict) and isinstance(meal_plan.get("recipes"), list):
+        meal_plan["recipes"] = [
+            r for r in meal_plan["recipes"]
+            if not (isinstance(r, dict) and r.get("name") in names_set)
+        ]
+
+    # 4. Record in deletedRecipes list to prevent any schema migration resurrection
+    if "deletedRecipes" not in db or not isinstance(db["deletedRecipes"], list):
+        db["deletedRecipes"] = []
+    for name in recipe_names:
+        if name and name not in db["deletedRecipes"]:
+            db["deletedRecipes"].append(name)
 
     return db, doc_ids_to_trash
 
@@ -178,6 +222,8 @@ class LocalStorageProvider:
         try:
             self.file_path.parent.mkdir(parents=True, exist_ok=True)
             db_data["lastUpdated"] = datetime.now(timezone.utc).isoformat()
+            db_data["schemaVersion"] = Config.SCHEMA_VERSION
+            db_data["appVersion"] = Config.APP_VERSION
             with open(self.file_path, "w", encoding="utf-8") as f:
                 json.dump(db_data, f, indent=2)
         except Exception as e:
@@ -203,12 +249,14 @@ class DriveStorageProvider:
         results = drive.files().list(
             q=query,
             spaces="drive",
-            fields="files(id, name)"
+            orderBy="modifiedTime desc",
+            fields="files(id, name, modifiedTime)"
         ).execute()
         files = results.get("files", [])
 
         if files:
             file_id = files[0]["id"]
+            logger.info(f"Found active Drive DB file: id={file_id}, name={files[0].get('name')}")
             request = drive.files().get_media(fileId=file_id)
             fh = io.BytesIO()
             downloader = MediaIoBaseDownload(fh, request)
@@ -259,6 +307,8 @@ class DriveStorageProvider:
             drive = self._get_drive_service()
             file_id, _ = self._get_or_create_db_file(drive)
             db_data["lastUpdated"] = datetime.now(timezone.utc).isoformat()
+            db_data["schemaVersion"] = Config.SCHEMA_VERSION
+            db_data["appVersion"] = Config.APP_VERSION
             self._update_drive_file(drive, file_id, db_data)
         except Exception as e:
             logger.error(f"Error saving database to Drive: {e}")
