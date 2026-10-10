@@ -13,10 +13,12 @@ from config import Config
 from core.auth import get_user_credentials, require_credentials, is_authenticated
 from core.config_keys import get_default_db
 from core.exceptions import AppError, GeminiError, GeminiQuotaError, StorageError
-from services.storage_service import get_storage_provider
-from services.gemini_service import generate_meal_plan_ai, reroll_single_recipe_ai
+from services.storage_service import get_storage_provider, delete_recipes_from_db
+from services.gemini_service import generate_meal_plan_ai, reroll_single_recipe_ai, interpret_imported_recipe_ai
 from services.calendar_service import schedule_approved_meals
 from services.docs_service import create_recipe_doc
+from services.drive_service import trash_drive_file
+
 
 logger = logging.getLogger(__name__)
 
@@ -618,3 +620,114 @@ def sync_shopping_checklist():
         "checkedCount": len(checked_items),
         "customCount": len(custom_items)
     })
+
+@api_bp.route("/recipes", methods=["DELETE"])
+def delete_recipes():
+    """Deletes one or more recipes from history, purging DB records and trashing associated Google Docs."""
+    payload = request.get_json() or {}
+    recipe_names = payload.get("recipeNames", [])
+    if isinstance(recipe_names, str):
+        recipe_names = [recipe_names]
+    if not isinstance(recipe_names, list) or not recipe_names:
+        raise AppError("At least one recipe name must be provided for deletion.")
+
+    creds = get_user_credentials()
+    storage = get_storage_provider(creds)
+    db = storage.load_db()
+
+    db, doc_ids = delete_recipes_from_db(db, recipe_names)
+
+    trashed_count = 0
+    if creds and doc_ids:
+        for doc_id in doc_ids:
+            if trash_drive_file(doc_id, creds):
+                trashed_count += 1
+
+    storage.save_db(db)
+    return jsonify({
+        "success": True,
+        "deletedCount": len(recipe_names),
+        "trashedDocCount": trashed_count,
+        "db": db
+    })
+
+@api_bp.route("/recipes/import/interpret", methods=["POST"])
+def interpret_imported_recipe():
+    """Uses Gemini AI to interpret and structure raw recipe text/notes into standardized format."""
+    payload = request.get_json() or {}
+    title = str(payload.get("title", "")).strip()
+    raw_text = str(payload.get("rawText", "")).strip()
+    if not raw_text:
+        raise AppError("Recipe text or notes cannot be empty.")
+
+    api_key, key_type = get_effective_api_key()
+    if not api_key:
+        raise AppError("Gemini API key is not configured. Please supply an API key in Settings.")
+
+    recipe = interpret_imported_recipe_ai(
+        title=title,
+        raw_text=raw_text,
+        api_key=api_key,
+        key_type=key_type
+    )
+
+    return jsonify({
+        "success": True,
+        "recipe": recipe
+    })
+
+@api_bp.route("/recipes/import/save", methods=["POST"])
+def save_imported_recipe():
+    """Persists an interpreted recipe into the user's Recipe Library with today's date."""
+    payload = request.get_json() or {}
+    recipe = payload.get("recipe")
+    if not recipe or not isinstance(recipe, dict) or not recipe.get("name"):
+        raise AppError("Valid recipe data with a name is required.")
+
+    is_favorite = bool(payload.get("isFavorite", False))
+    recipe_name = str(recipe["name"]).strip()
+
+    creds = get_user_credentials()
+    storage = get_storage_provider(creds)
+    db = storage.load_db()
+
+    prefs = db.get("preferences", {})
+    diners_count = int(prefs.get("dinersCount", 4) or 4)
+    today_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    if "recipeLibrary" not in db:
+        db["recipeLibrary"] = {}
+    if "recipeRatings" not in db:
+        db["recipeRatings"] = {}
+
+    formatted_recipe = {
+        "name": recipe_name,
+        "description": recipe.get("description", f"Delicious homemade {recipe_name}."),
+        "prepTime": recipe.get("prepTime", "15 mins"),
+        "cookTime": recipe.get("cookTime", "25 mins"),
+        "ingredients": recipe.get("ingredients", []),
+        "instructions": recipe.get("instructions", []),
+        "docUrl": recipe.get("docUrl", ""),
+        "docId": recipe.get("docId", ""),
+        "originalDiners": diners_count,
+        "lastScheduledDate": today_date,
+        "dateAdded": datetime.now(timezone.utc).isoformat()
+    }
+
+    db["recipeLibrary"][recipe_name] = formatted_recipe
+
+    if is_favorite:
+        db["recipeRatings"][recipe_name] = {
+            "isFavorite": True,
+            "rating": 5,
+            "favoritedAt": datetime.now(timezone.utc).isoformat()
+        }
+
+    storage.save_db(db)
+    return jsonify({
+        "success": True,
+        "recipe": formatted_recipe,
+        "isFavorite": is_favorite,
+        "db": db
+    })
+

@@ -2,8 +2,9 @@
 Unit tests for storage_service: schema migrations and database operations.
 """
 
-from services.storage_service import migrate_db_schema, LocalStorageProvider
+from services.storage_service import migrate_db_schema, LocalStorageProvider, delete_recipes_from_db
 from core.config_keys import get_default_db
+
 
 def test_migrate_db_schema_restrictions_to_dietary():
     legacy_db = {
@@ -68,3 +69,26 @@ def test_local_storage_provider_lifecycle(temp_db_path):
     reloaded = provider.load_db()
     assert reloaded["preferences"]["dinersCount"] == 6
     assert reloaded["preferences"]["allergies"] == "Shellfish"
+
+def test_delete_recipes_from_db_and_prevent_migration_resurrection():
+    db = {
+        "recipeLibrary": {
+            "Recipe A": {"name": "Recipe A", "docId": "doc-123"},
+            "Recipe B": {"name": "Recipe B", "docId": "doc-456"}
+        },
+        "recipeRatings": {
+            "Recipe A": {"isFavorite": True, "rating": 5},
+            "Recipe B": {"isFavorite": False, "rating": 0}
+        }
+    }
+
+    updated_db, doc_ids = delete_recipes_from_db(db, ["Recipe A"])
+    assert "Recipe A" not in updated_db["recipeLibrary"]
+    assert "Recipe A" not in updated_db["recipeRatings"]
+    assert "Recipe B" in updated_db["recipeLibrary"]
+    assert doc_ids == ["doc-123"]
+
+    # Verify migration does not resurrect Recipe A
+    migrated, _ = migrate_db_schema(updated_db)
+    assert "Recipe A" not in migrated["recipeLibrary"]
+

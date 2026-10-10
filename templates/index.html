@@ -305,29 +305,34 @@
 
           <!-- History Sub-Navigation Tabs -->
           <div class="history-subnav">
-            <button type="button" class="history-subtab active" id="subtab-history-recent"
-              onclick="switchHistoryTab('recent')">
-              <span class="subtab-icon">📜</span>
-              <span>Recipe History</span>
-              <span class="subtab-badge" id="badge-recent-count">0</span>
-            </button>
-            <button type="button" class="history-subtab" id="subtab-history-favorites"
-              onclick="switchHistoryTab('favorites')">
-              <span class="subtab-icon">⭐</span>
-              <span>Family Favorites</span>
-              <span class="subtab-badge" id="badge-favorites-count">0</span>
+            <div class="history-subnav-tabs">
+              <button type="button" class="history-subtab active" id="subtab-history-recent"
+                onclick="switchHistoryTab('recent')">
+                <span class="subtab-icon">📜</span>
+                <span>Recipe History</span>
+                <span class="subtab-badge" id="badge-recent-count">0</span>
+              </button>
+              <button type="button" class="history-subtab" id="subtab-history-favorites"
+                onclick="switchHistoryTab('favorites')">
+                <span class="subtab-icon">⭐</span>
+                <span>Family Favorites</span>
+                <span class="subtab-badge" id="badge-favorites-count">0</span>
+              </button>
+            </div>
+            <button type="button" class="btn btn-secondary history-import-btn" id="btn-open-import" onclick="openImportRecipeModal()">
+              <span>📥 Import Recipe</span>
             </button>
           </div>
 
-          <!-- Staged Re-use Banner in History View -->
+          <!-- Staged Re-use & Action Banner in History View -->
           <div id="history-reuse-banner" class="reuse-banner" style="display: none;">
             <div class="reuse-banner-content">
               <span class="reuse-banner-icon">✨</span>
-              <span id="reuse-banner-text"><strong>0 recipes</strong> selected to re-use</span>
+              <span id="reuse-banner-text"><strong>0 recipes</strong> selected</span>
             </div>
             <div class="reuse-banner-actions">
-              <button type="button" class="btn btn-sm btn-gold" onclick="switchView('planner')">🗓️ Open in
-                Planner</button>
+              <button type="button" class="btn btn-sm btn-gold" onclick="switchView('planner')">🗓️ Open in Planner</button>
+              <button type="button" class="btn btn-sm btn-danger" onclick="handleOpenDeleteConfirmation()">🗑️ Remove from History</button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="clearReusedRecipes()">✕ Clear</button>
             </div>
           </div>
@@ -514,6 +519,140 @@
       </button>
     </nav>
     {% endif %}
+
+    <!-- MODAL: CONFIRM RECIPE DELETION -->
+    <div class="modal-overlay" id="modal-confirm-delete" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <span class="modal-icon">🗑️</span>
+            <h3 class="modal-title" id="delete-modal-title">Remove Recipes from History?</h3>
+          </div>
+          <button type="button" class="modal-close" onclick="closeDeleteConfirmationModal()" aria-label="Close dialog">✕</button>
+        </div>
+        <div class="modal-body">
+          <p id="delete-modal-lead" style="margin-bottom: 12px; font-size: 14px; line-height: 1.5;">
+            You are about to permanently remove the following recipe(s) from your History:
+          </p>
+          <ul id="delete-modal-list" class="modal-recipe-list">
+            <!-- Selected recipe titles dynamically rendered here -->
+          </ul>
+          <div class="modal-warning-box">
+            <span style="font-size: 18px;">⚠️</span>
+            <div style="font-size: 13px; line-height: 1.4; color: var(--text-secondary);">
+              This will remove them from your Recipe Library and send any generated Google Docs for these recipes to your Google Drive Trash.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeDeleteConfirmationModal()">Cancel</button>
+          <button type="button" class="btn btn-danger" id="btn-confirm-delete" onclick="handleConfirmDeleteRecipes()">
+            <span>🗑️ Permanently Delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: IMPORT RECIPE VIA GEMINI AI -->
+    <div class="modal-overlay" id="modal-import-recipe" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+      <div class="modal-card modal-card-large">
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <span class="modal-icon">📥</span>
+            <div>
+              <h3 class="modal-title" id="import-modal-title">Import Recipe</h3>
+              <div class="modal-subtitle" id="import-modal-subtitle">
+                Paste any recipe, cookbook notes, or web excerpt. Gemini AI will structure and save it to your history.
+              </div>
+            </div>
+          </div>
+          <button type="button" class="modal-close" onclick="closeImportRecipeModal()" aria-label="Close modal">✕</button>
+        </div>
+
+        <!-- PHASE 1: INPUT VIEW -->
+        <div class="modal-body" id="import-step-input">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="import-recipe-title">Recipe Title <span style="font-weight: normal; color: var(--text-muted);">(Optional override)</span></label>
+            <input type="text" id="import-recipe-title" placeholder="e.g., Mom's Lasagna (or leave blank to let AI deduce)">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="import-recipe-text">Recipe Text or Notes <span style="color: var(--accent-gold);">*</span></label>
+            <div class="input-desc" style="margin-bottom: 6px;">Paste ingredients, instructions, cooking times, or blog content.</div>
+            <textarea id="import-recipe-text" rows="8" style="min-height: 160px; font-family: inherit; font-size: 13px;" placeholder="e.g.
+Ingredients:
+- 1 lb ground beef
+- 1 box lasagna noodles
+- 2 cups shredded mozzarella...
+
+Instructions:
+1. Brown the beef in a skillet..."></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 4px;">
+            <label class="checkbox-label" for="import-recipe-favorite" style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 14px; font-weight: 500;">
+              <input type="checkbox" id="import-recipe-favorite" style="width: auto; cursor: pointer;">
+              <span>⭐ Mark as Family Favorite immediately</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- PHASE 2: PREVIEW VIEW -->
+        <div class="modal-body" id="import-step-preview" style="display: none;">
+          <div class="import-preview-badge">✨ Gemini AI Structured Preview</div>
+          
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="preview-recipe-name">Dish Name</label>
+            <input type="text" id="preview-recipe-name" style="font-weight: 600;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="preview-recipe-desc">Description</label>
+            <input type="text" id="preview-recipe-desc">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="preview-recipe-preptime">Prep Time</label>
+              <input type="text" id="preview-recipe-preptime" placeholder="15 mins">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="preview-recipe-cooktime">Cook Time</label>
+              <input type="text" id="preview-recipe-cooktime" placeholder="25 mins">
+            </div>
+          </div>
+
+          <div class="preview-section" style="margin-bottom: 14px;">
+            <div class="preview-section-title">Ingredients (<span id="preview-ingredient-count">0</span>)</div>
+            <div id="preview-ingredients-list" class="preview-items-box">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div class="preview-section" style="margin-bottom: 4px;">
+            <div class="preview-section-title">Cooking Instructions (<span id="preview-step-count">0</span>)</div>
+            <ol id="preview-instructions-list" class="preview-steps-list">
+              <!-- Dynamically populated -->
+            </ol>
+          </div>
+        </div>
+
+        <!-- MODAL FOOTER -->
+        <div class="modal-footer" id="import-footer-input">
+          <button type="button" class="btn btn-secondary" onclick="closeImportRecipeModal()">Cancel</button>
+          <button type="button" class="btn" id="btn-interpret-recipe" onclick="handleInterpretRecipe()">
+            <span>✨ Interpret with AI</span>
+          </button>
+        </div>
+
+        <div class="modal-footer" id="import-footer-preview" style="display: none;">
+          <button type="button" class="btn btn-secondary" onclick="handleBackToImportInput()">← Back to Edit</button>
+          <button type="button" class="btn btn-gold" id="btn-save-imported" onclick="handleSaveImportedRecipe()">
+            <span>✓ Confirm & Save to History</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- TOAST NOTIFICATION -->
     <div class="toast" id="toast">

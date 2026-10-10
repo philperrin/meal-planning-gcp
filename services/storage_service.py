@@ -8,7 +8,7 @@ import json
 import logging
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 import io
 
 from googleapiclient.discovery import build
@@ -126,6 +126,32 @@ def migrate_db_schema(db: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
                 updated = True
 
     return db, updated
+
+def delete_recipes_from_db(db: Dict[str, Any], recipe_names: List[str]) -> Tuple[Dict[str, Any], List[str]]:
+    """
+    Deletes recipes from recipeLibrary and recipeRatings in the DB.
+    Returns the modified DB and a list of associated docIds that should be trashed in Google Drive.
+    """
+    if not isinstance(recipe_names, list) or not recipe_names:
+        return db, []
+
+    doc_ids_to_trash: List[str] = []
+    recipe_library = db.get("recipeLibrary")
+    if isinstance(recipe_library, dict):
+        for name in recipe_names:
+            if name in recipe_library:
+                item = recipe_library.pop(name, None)
+                if isinstance(item, dict):
+                    doc_id = item.get("docId") or item.get("fileId")
+                    if doc_id and doc_id not in doc_ids_to_trash:
+                        doc_ids_to_trash.append(doc_id)
+
+    recipe_ratings = db.get("recipeRatings")
+    if isinstance(recipe_ratings, dict):
+        for name in recipe_names:
+            recipe_ratings.pop(name, None)
+
+    return db, doc_ids_to_trash
 
 class LocalStorageProvider:
     """Provides local JSON file storage for headless development or testing."""

@@ -343,3 +343,66 @@ def reroll_single_recipe_ai(
     if not recipe or not recipe.get("name"):
         raise GeminiError("Gemini returned an invalid replacement recipe.")
     return recipe
+
+def interpret_imported_recipe_ai(
+    title: str,
+    raw_text: str,
+    api_key: str,
+    key_type: str = "shared"
+) -> Dict[str, Any]:
+    """
+    Parses unstructured recipe text, cookbook notes, or copied web recipes into
+    standardized structured JSON conforming to RECIPE_ITEM_SCHEMA.
+    """
+    if not raw_text or not raw_text.strip():
+        raise GeminiError("Recipe text cannot be empty.")
+
+    title_clean = title.strip() if title else ""
+    title_directive = f"USER TITLE OVERRIDE (prioritize this exact dish name if appropriate): {title_clean}\n" if title_clean else ""
+
+    prompt = (
+        "You are an expert culinary assistant and recipe editor. "
+        "Your task is to interpret unstructured recipe notes, pasted website text, ingredients lists, or cookbook excerpts "
+        "and convert them into a standardized structured recipe JSON object.\n\n"
+        f"{title_directive}"
+        "RAW RECIPE CONTENT:\n"
+        f"\"\"\"\n{raw_text.strip()}\n\"\"\"\n\n"
+        "=== STANDARDIZATION GUIDELINES ===\n"
+        "1. NAME: If the user provided a title override above, prioritize it (cleanly capitalized). Otherwise, deduce a clear, appetizing recipe name from the content.\n"
+        "2. DESCRIPTION: Write a concise 1-2 sentence description highlighting the dish, its flavor profile, and appeal.\n"
+        "3. PREP & COOK TIME: Realistic prepTime and cookTime strings must be provided (e.g. '15 mins', '30 mins'). If not specified in the raw text, estimate reasonable culinary durations.\n"
+        "4. INGREDIENTS NORMALIZATION: Parse all ingredients into clean individual items:\n"
+        "   - 'name': specific ingredient name (e.g., 'boneless skinless chicken breasts', 'olive oil', 'garlic')\n"
+        "   - 'amount': numerical quantity (e.g., 1.5, 2, 0.5, 0.25). Convert fractions to decimals.\n"
+        "   - 'unit': standard measurement unit (e.g., 'lbs', 'cups', 'tbsp', 'tsp', 'oz', 'cloves', 'whole'). For count-based items without units, use 'whole' or 'piece'.\n"
+        "5. ACTIONABLE INSTRUCTIONS: Format cooking instructions into a sequential array of clear, ordered steps.\n\n"
+        "Format the output strictly according to the requested JSON schema with no preamble or markdown outside the JSON."
+    )
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": RECIPE_ITEM_SCHEMA
+        }
+    }
+
+    result = call_gemini_with_retry_and_fallback(payload, api_key=api_key, key_type=key_type)
+    recipe = result["data"]
+    if not recipe or not isinstance(recipe, dict) or not recipe.get("name"):
+        raise GeminiError("Gemini returned an invalid or incomplete recipe structure.")
+
+    # Ensure required fields exist with sensible fallbacks
+    if not recipe.get("description"):
+        recipe["description"] = f"Delicious homemade {recipe['name']}."
+    if not recipe.get("prepTime"):
+        recipe["prepTime"] = "15 mins"
+    if not recipe.get("cookTime"):
+        recipe["cookTime"] = "25 mins"
+    if not isinstance(recipe.get("ingredients"), list):
+        recipe["ingredients"] = []
+    if not isinstance(recipe.get("instructions"), list):
+        recipe["instructions"] = []
+
+    return recipe
+

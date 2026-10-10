@@ -76,3 +76,20 @@ def get_or_create_subfolder(parent_folder_id: str, subfolder_name: str, credenti
         fields="id"
     ).execute()
     return folder["id"]
+
+def trash_drive_file(file_id: str, credentials: Credentials) -> bool:
+    """
+    Moves a file to the user's Google Drive Trash.
+    Returns True if successful, False otherwise.
+    """
+    if not file_id:
+        return False
+    try:
+        drive = get_drive_service(credentials)
+        drive.files().update(fileId=file_id, body={"trashed": True}).execute()
+        logger.info(f"Trashed Google Drive file {file_id}")
+        return True
+    except Exception as e:
+        logger.warning(f"Could not trash Drive file {file_id}: {e}")
+        return False
+

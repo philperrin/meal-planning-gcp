@@ -28,7 +28,8 @@ def test_index_route_unauthenticated(client):
     assert "Google Sign In" in html
     assert "Send Recipe Events to Your Calendar" in html
     assert "View Your Personal Recipe History" in html
-    assert "will not integrate with your Google Calendar" in html
+    assert "will not save this plan or add events to your Google Calendar" in html
+
 
 def test_index_route_authenticated(auth_client):
     """When logged in, all navigation tabs and welcome step cards must be present."""
@@ -176,4 +177,74 @@ def test_api_toggle_favorite_and_rating(auth_client, sample_recipes):
     fav_data = fav_resp.get_json()
     assert fav_data["isFavorite"] is True
     assert fav_data["rating"] == 5
+
+def test_api_delete_recipes(auth_client, sample_recipes):
+    recipe = sample_recipes[0]
+    # First save recipe to library
+    auth_client.post("/api/recipes/favorite", json={
+        "recipeName": recipe["name"],
+        "isFavorite": True,
+        "recipeObj": recipe
+    })
+
+    # Delete recipe
+    with patch("routes.api.trash_drive_file", return_value=True):
+        del_resp = auth_client.delete("/api/recipes", json={
+            "recipeNames": [recipe["name"]]
+        })
+    assert del_resp.status_code == 200
+    del_data = del_resp.get_json()
+    assert del_data["success"] is True
+    assert del_data["deletedCount"] == 1
+    assert recipe["name"] not in del_data["db"]["recipeLibrary"]
+    assert recipe["name"] not in del_data["db"]["recipeRatings"]
+
+def test_api_interpret_imported_recipe(client):
+    mock_interpreted = {
+        "name": "Quick Lemon Garlic Salmon",
+        "description": "Zesty salmon seared in butter and garlic.",
+        "prepTime": "10 mins",
+        "cookTime": "15 mins",
+        "ingredients": [
+            {"name": "salmon fillets", "amount": 2, "unit": "pieces"},
+            {"name": "garlic cloves", "amount": 3, "unit": "cloves"}
+        ],
+        "instructions": ["Season salmon.", "Pan sear in butter."]
+    }
+
+    with patch("routes.api.interpret_imported_recipe_ai", return_value=mock_interpreted):
+        resp = client.post("/api/recipes/import/interpret", json={
+            "title": "Quick Lemon Garlic Salmon",
+            "rawText": "Salmon fillets with garlic, butter and lemon juice."
+        })
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["success"] is True
+    assert data["recipe"]["name"] == "Quick Lemon Garlic Salmon"
+    assert len(data["recipe"]["ingredients"]) == 2
+
+def test_api_save_imported_recipe(auth_client):
+    recipe_payload = {
+        "name": "Grandma's Meatballs",
+        "description": "Tender beef meatballs simmered in marinara.",
+        "prepTime": "20 mins",
+        "cookTime": "30 mins",
+        "ingredients": [
+            {"name": "ground beef", "amount": 1.5, "unit": "lbs"}
+        ],
+        "instructions": ["Mix ingredients.", "Bake at 375F."]
+    }
+
+    resp = auth_client.post("/api/recipes/import/save", json={
+        "recipe": recipe_payload,
+        "isFavorite": True
+    })
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["success"] is True
+    assert data["recipe"]["name"] == "Grandma's Meatballs"
+    assert data["isFavorite"] is True
+    assert "Grandma's Meatballs" in data["db"]["recipeLibrary"]
+    assert data["db"]["recipeRatings"]["Grandma's Meatballs"]["isFavorite"] is True
+
 

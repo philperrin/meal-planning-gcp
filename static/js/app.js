@@ -2298,7 +2298,7 @@ function updateReuseBanners() {
     if (count > 0) {
       els.historyReuseBanner.style.display = 'flex';
       if (els.reuseBannerText) {
-        els.reuseBannerText.innerHTML = `<strong>${count} recipe${count > 1 ? 's' : ''}</strong> selected to re-use in your next plan`;
+        els.reuseBannerText.innerHTML = `<strong>${count} recipe${count > 1 ? 's' : ''}</strong> selected`;
       }
     } else {
       els.historyReuseBanner.style.display = 'none';
@@ -2690,6 +2690,271 @@ function handleCreateRecipeDoc(event, recipeName) {
     })
     .createRecipeDocServer(recipeName);
 }
+
+/**
+ * Opens the delete confirmation dialog for selected recipes in History.
+ */
+function handleOpenDeleteConfirmation() {
+  const selected = Array.from(appState.reusedRecipes);
+  if (!selected.length) {
+    showToast("Please select at least one recipe to delete.", true);
+    return;
+  }
+
+  const modal = document.getElementById('modal-confirm-delete');
+  const listEl = document.getElementById('delete-modal-list');
+  const leadEl = document.getElementById('delete-modal-lead');
+  if (!modal || !listEl) return;
+
+  if (leadEl) {
+    leadEl.textContent = `You are about to permanently remove ${selected.length} recipe${selected.length > 1 ? 's' : ''} from your History:`;
+  }
+
+  listEl.innerHTML = selected.map(name => `<li><strong>${escapeHtml(name)}</strong></li>`).join('');
+  modal.style.display = 'flex';
+}
+
+/**
+ * Closes the delete confirmation dialog.
+ */
+function closeDeleteConfirmationModal() {
+  const modal = document.getElementById('modal-confirm-delete');
+  if (modal) modal.style.display = 'none';
+}
+
+/**
+ * Executes deletion of selected recipes from History and Google Drive.
+ */
+async function handleConfirmDeleteRecipes() {
+  const selected = Array.from(appState.reusedRecipes);
+  if (!selected.length) return;
+
+  const btn = document.getElementById('btn-confirm-delete');
+  const originalHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="loading-spinner-inline"></span> Deleting...`;
+  }
+
+  try {
+    const res = await apiClient.deleteRecipes(selected);
+    if (res && res.success) {
+      const deletedCount = selected.length;
+      appState.reusedRecipes.clear();
+      closeDeleteConfirmationModal();
+      showToast(`✓ Removed ${deletedCount} recipe${deletedCount > 1 ? 's' : ''} from History.`);
+      loadHistoryData();
+    } else {
+      showToast("Failed to delete recipes.", true);
+    }
+  } catch (err) {
+    console.error("Error deleting recipes:", err);
+    showToast("Error deleting recipes: " + (err.message || err), true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
+// Temporary storage for recipe currently being imported
+let currentImportedRecipe = null;
+
+/**
+ * Opens the Recipe Import modal and resets to Phase 1 (Input).
+ */
+function openImportRecipeModal() {
+  const modal = document.getElementById('modal-import-recipe');
+  if (!modal) return;
+
+  // Reset inputs
+  const titleInput = document.getElementById('import-recipe-title');
+  const textInput = document.getElementById('import-recipe-text');
+  const favCheck = document.getElementById('import-recipe-favorite');
+  if (titleInput) titleInput.value = '';
+  if (textInput) textInput.value = '';
+  if (favCheck) favCheck.checked = false;
+
+  currentImportedRecipe = null;
+
+  // Show Step 1, hide Step 2
+  const stepInput = document.getElementById('import-step-input');
+  const footerInput = document.getElementById('import-footer-input');
+  const stepPreview = document.getElementById('import-step-preview');
+  const footerPreview = document.getElementById('import-footer-preview');
+
+  if (stepInput) stepInput.style.display = 'block';
+  if (footerInput) footerInput.style.display = 'flex';
+  if (stepPreview) stepPreview.style.display = 'none';
+  if (footerPreview) footerPreview.style.display = 'none';
+
+  modal.style.display = 'flex';
+  if (textInput) textInput.focus();
+}
+
+/**
+ * Closes the Recipe Import modal.
+ */
+function closeImportRecipeModal() {
+  const modal = document.getElementById('modal-import-recipe');
+  if (modal) modal.style.display = 'none';
+  currentImportedRecipe = null;
+}
+
+/**
+ * Returns to Phase 1 (Input) from Phase 2 (Preview) preserving user input.
+ */
+function handleBackToImportInput() {
+  const stepInput = document.getElementById('import-step-input');
+  const footerInput = document.getElementById('import-footer-input');
+  const stepPreview = document.getElementById('import-step-preview');
+  const footerPreview = document.getElementById('import-footer-preview');
+
+  if (stepInput) stepInput.style.display = 'block';
+  if (footerInput) footerInput.style.display = 'flex';
+  if (stepPreview) stepPreview.style.display = 'none';
+  if (footerPreview) footerPreview.style.display = 'none';
+}
+
+/**
+ * Sends raw recipe input to Gemini AI to structure the recipe into standardized JSON.
+ */
+async function handleInterpretRecipe() {
+  const titleInput = document.getElementById('import-recipe-title');
+  const textInput = document.getElementById('import-recipe-text');
+  const title = (titleInput ? titleInput.value : '').trim();
+  const rawText = (textInput ? textInput.value : '').trim();
+
+  if (!rawText) {
+    showToast("Please paste or type recipe text or notes.", true);
+    if (textInput) textInput.focus();
+    return;
+  }
+
+  const btn = document.getElementById('btn-interpret-recipe');
+  const originalHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="loading-spinner-inline"></span> Analyzing with Gemini...`;
+  }
+
+  try {
+    const res = await apiClient.interpretImportedRecipe(title, rawText);
+    if (res && res.success && res.recipe) {
+      currentImportedRecipe = res.recipe;
+
+      // Populate Phase 2 (Preview)
+      const nameEl = document.getElementById('preview-recipe-name');
+      const descEl = document.getElementById('preview-recipe-desc');
+      const prepEl = document.getElementById('preview-recipe-preptime');
+      const cookEl = document.getElementById('preview-recipe-cooktime');
+      const ingCountEl = document.getElementById('preview-ingredient-count');
+      const ingListEl = document.getElementById('preview-ingredients-list');
+      const stepCountEl = document.getElementById('preview-step-count');
+      const stepListEl = document.getElementById('preview-instructions-list');
+
+      if (nameEl) nameEl.value = res.recipe.name || title;
+      if (descEl) descEl.value = res.recipe.description || '';
+      if (prepEl) prepEl.value = res.recipe.prepTime || '15 mins';
+      if (cookEl) cookEl.value = res.recipe.cookTime || '25 mins';
+
+      const ingredients = Array.isArray(res.recipe.ingredients) ? res.recipe.ingredients : [];
+      if (ingCountEl) ingCountEl.textContent = ingredients.length;
+      if (ingListEl) {
+        if (ingredients.length) {
+          ingListEl.innerHTML = ingredients.map(ing => {
+            const amtStr = ing.amount !== undefined ? `${ing.amount} ` : '';
+            const unitStr = ing.unit ? `${ing.unit} ` : '';
+            return `<div class="preview-ingredient-item">
+              <span><strong>${escapeHtml(amtStr + unitStr)}</strong>${escapeHtml(ing.name || '')}</span>
+            </div>`;
+          }).join('');
+        } else {
+          ingListEl.innerHTML = `<div style="color:var(--text-muted); font-style:italic;">No ingredients extracted.</div>`;
+        }
+      }
+
+      const steps = Array.isArray(res.recipe.instructions) ? res.recipe.instructions : [];
+      if (stepCountEl) stepCountEl.textContent = steps.length;
+      if (stepListEl) {
+        if (steps.length) {
+          stepListEl.innerHTML = steps.map(step => `<li>${escapeHtml(step)}</li>`).join('');
+        } else {
+          stepListEl.innerHTML = `<li style="color:var(--text-muted); font-style:italic;">No instructions extracted.</li>`;
+        }
+      }
+
+      // Transition to Preview
+      const stepInput = document.getElementById('import-step-input');
+      const footerInput = document.getElementById('import-footer-input');
+      const stepPreview = document.getElementById('import-step-preview');
+      const footerPreview = document.getElementById('import-footer-preview');
+
+      if (stepInput) stepInput.style.display = 'none';
+      if (footerInput) footerInput.style.display = 'none';
+      if (stepPreview) stepPreview.style.display = 'block';
+      if (footerPreview) footerPreview.style.display = 'flex';
+    } else {
+      showToast("Could not interpret recipe.", true);
+    }
+  } catch (err) {
+    console.error("Error interpreting recipe:", err);
+    showToast("AI Interpretation failed: " + (err.message || err), true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
+/**
+ * Saves the interpreted recipe into Recipe Library and refreshes History.
+ */
+async function handleSaveImportedRecipe() {
+  if (!currentImportedRecipe) return;
+
+  const nameEl = document.getElementById('preview-recipe-name');
+  const descEl = document.getElementById('preview-recipe-desc');
+  const prepEl = document.getElementById('preview-recipe-preptime');
+  const cookEl = document.getElementById('preview-recipe-cooktime');
+  const favCheck = document.getElementById('import-recipe-favorite');
+
+  if (nameEl && nameEl.value.trim()) currentImportedRecipe.name = nameEl.value.trim();
+  if (descEl) currentImportedRecipe.description = descEl.value.trim();
+  if (prepEl && prepEl.value.trim()) currentImportedRecipe.prepTime = prepEl.value.trim();
+  if (cookEl && cookEl.value.trim()) currentImportedRecipe.cookTime = cookEl.value.trim();
+  const isFavorite = favCheck ? Boolean(favCheck.checked) : false;
+
+  const btn = document.getElementById('btn-save-imported');
+  const originalHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="loading-spinner-inline"></span> Saving...`;
+  }
+
+  try {
+    const res = await apiClient.saveImportedRecipe(currentImportedRecipe, isFavorite);
+    if (res && res.success) {
+      const savedName = currentImportedRecipe.name;
+      closeImportRecipeModal();
+      showToast(`✓ Successfully imported "${savedName}"!`);
+      loadHistoryData();
+    } else {
+      showToast("Failed to save recipe to history.", true);
+    }
+  } catch (err) {
+    console.error("Error saving recipe:", err);
+    showToast("Error saving recipe: " + (err.message || err), true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
 
 /**
  * Displays an unobtrusive toast notification.

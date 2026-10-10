@@ -100,6 +100,18 @@ const apiClient = {
 
   syncShoppingChecklistServer(checkedItems, customItems) {
     return this._request("/api/shopping/sync", "POST", { checkedItems, customItems });
+  },
+
+  deleteRecipes(recipeNames) {
+    return this._request("/api/recipes", "DELETE", { recipeNames });
+  },
+
+  interpretImportedRecipe(title, rawText) {
+    return this._request("/api/recipes/import/interpret", "POST", { title, rawText });
+  },
+
+  saveImportedRecipe(recipe, isFavorite) {
+    return this._request("/api/recipes/import/save", "POST", { recipe, isFavorite });
   }
 };
 
@@ -183,6 +195,18 @@ class GasRunShim {
 
   syncShoppingChecklistServer(checked, custom) {
     this._execute(apiClient.syncShoppingChecklistServer(checked, custom));
+  }
+
+  deleteRecipes(recipeNames) {
+    this._execute(apiClient.deleteRecipes(recipeNames));
+  }
+
+  interpretImportedRecipe(title, rawText) {
+    this._execute(apiClient.interpretImportedRecipe(title, rawText));
+  }
+
+  saveImportedRecipe(recipe, isFavorite) {
+    this._execute(apiClient.saveImportedRecipe(recipe, isFavorite));
   }
 }
 
