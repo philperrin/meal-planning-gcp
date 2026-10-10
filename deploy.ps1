@@ -10,7 +10,7 @@ $ServiceName = "meal-planning-app"
 $Region = "us-central1"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "🚀 Deploying Meal Planning Assistant to Google Cloud Run" -ForegroundColor Cyan
+Write-Host "Deploying Meal Planning Assistant to Google Cloud Run" -ForegroundColor Cyan
 Write-Host "Project: $ProjectId"
 Write-Host "Service: $ServiceName"
 Write-Host "Region:  $Region"
@@ -36,8 +36,9 @@ if (Test-Path $ConfigFile) {
         $NextBuildStr = "{0:D3}" -f $NextBuild
         $NewVersion = "$Year.$Minor.$NextBuildStr"
 
-        Write-Host "🔖 Incremented appVersion: $OldVersion -> $NewVersion" -ForegroundColor Cyan
-        $ConfigContent = [regex]::Replace($ConfigContent, $VersionRegex, "`${1}$NewVersion`${3}")
+        Write-Host "[VERSION] Incremented appVersion: $OldVersion -> $NewVersion" -ForegroundColor Cyan
+        $Replacement = '${1}' + $NewVersion + '${3}'
+        $ConfigContent = [regex]::Replace($ConfigContent, $VersionRegex, $Replacement)
         [System.IO.File]::WriteAllText((Resolve-Path $ConfigFile).Path, $ConfigContent, [System.Text.Encoding]::UTF8)
     } else {
         Write-Warning "Could not find APP_VERSION in $ConfigFile to increment."
@@ -109,7 +110,7 @@ if ($EnvVarsString) {
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "✅ Deployment complete! Deployed version: $NewVersion" -ForegroundColor Green
+Write-Host "[SUCCESS] Deployment complete! Deployed version: $NewVersion" -ForegroundColor Green
 $ServiceUrl = gcloud run services describe $ServiceName --platform managed --region $Region --format 'value(status.url)'
-Write-Host "🌐 Service URL: $ServiceUrl" -ForegroundColor Green
+Write-Host "[URL] Service URL: $ServiceUrl" -ForegroundColor Green
 Write-Host "=========================================================="
