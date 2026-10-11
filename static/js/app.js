@@ -1962,7 +1962,7 @@ function renderMealPlan() {
   let html = `
     <div class="meal-plan-header">
       <div>
-        <div class="meal-plan-title">Active Weekly Plan</div>
+        <div class="meal-plan-title">This Week's Plan</div>
         <div class="meal-plan-metadata">Generated at: ${new Date(plan.generatedAt).toLocaleString()}</div>
       </div>
       <div>
@@ -1985,11 +1985,8 @@ function renderMealPlan() {
   if (plan.approved && plan.executionResult) {
     html += `
       <div class="success-box">
-        <h4 class="success-title">Meal plan scheduled on Google Calendar!</h4>
-        <p class="success-desc">Individual recipe instructions and your categorized grocery list have been added directly to your Default Google Calendar events.</p>
-        <div class="success-links">
-          <a href="https://calendar.google.com" target="_blank" class="doc-link">📅 Open Google Calendar</a>
-        </div>
+        <h4 class="success-title">Meal plan scheduled on <a href="https://calendar.google.com" target="_blank" class="doc-link">Google Calendar</a>!</h4>
+        <p class="success-desc">Individual recipes and your grocery list have been added directly to your calendar.</p>
       </div>
     `;
   }
@@ -2091,16 +2088,11 @@ function renderMealPlan() {
         
         <div class="recipe-card-collapsible">
           <div class="recipe-date-container" onclick="event.stopPropagation()">
-            <span class="recipe-date-label">Schedule Prep:</span>
+            <span class="recipe-date-label">Scheduled for:</span>
             ${plan.approved
         ? `<span style="font-size: 13px; font-weight:600; color:var(--accent-secondary);">${defaultDate}</span>`
         : `<input type="date" class="recipe-date-input" id="date-${idx}" value="${defaultDate}">`
       }
-          </div>
-          
-          <div class="recipe-meta-row">
-            <div class="recipe-meta-item">⏱️ Prep: ${escapeHtml(recipe.prepTime)}</div>
-            <div class="recipe-meta-item">🔥 Cook: ${escapeHtml(recipe.cookTime)}</div>
           </div>
           
           <div class="recipe-accordion" onclick="event.stopPropagation()">
@@ -2110,6 +2102,10 @@ function renderMealPlan() {
             
             <div class="recipe-details" id="details-${idx}">
               <div class="detail-section">
+                <div class="recipe-meta-row">
+                  <div class="recipe-meta-item">⏱️ Prep: ${escapeHtml(recipe.prepTime)}</div>
+                  <div class="recipe-meta-item">🔥 Cook: ${escapeHtml(recipe.cookTime)}</div>
+                </div>
                 <div class="detail-heading">Ingredients</div>
                 <ul class="detail-list">
                   ${ingredientsList}
@@ -2321,8 +2317,8 @@ function switchHistoryTab(tabId) {
 
   if (els.historyDesc) {
     els.historyDesc.textContent = isRecent
-      ? "Review the 25 most recently scheduled recipes from your Google Drive. Rate your favorites and check boxes to re-use recipes in your next plan."
-      : "Your 25 highest-rated favorite recipes, sorted by rating and recency. Check boxes to re-use recipes in your next plan.";
+      ? "Review your recent recipes and mark your favorites. Select recipes to re-use in your next plan."
+      : "Your favorite recipes, sorted by recency. Select recipes to re-use in your next plan.";
   }
 
   renderHistoryList();

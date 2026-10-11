@@ -87,11 +87,12 @@
       <div class="view active" id="welcome-view">
         <div class="panel welcome-hero">
           <div class="welcome-hero-content">
-            <h2 class="welcome-title">Welcome!</h2>
+            <h2 class="welcome-title">Hello!</h2>
             <p class="welcome-lead">
-              I'm your intelligent meal planning assistant - designed to streamline your weekly dinner planning. I'll
-              help generate balanced meal plans, schedule complete meals onto your Google Calendar, and create a
-              consolidated grocery list.<br>
+              I'm your intelligent meal planning assistant - here to help plan meals, grocery lists, and keep it all
+              synced to your calendar. This app allows you to specify dietary needs and preferences to generate
+              customized dinners for your family.
+              <br>
               This app was developed by Phil at <a href="https://milehighdataviz.com" target="_blank">Mile High Data
                 Viz</a>.
             </p>
@@ -173,7 +174,7 @@
             </p>
 
             <div class="welcome-benefits-card">
-              <h4 class="welcome-benefits-heading">Here is what you can expect once you sign in:</h4>
+              <h4 class="welcome-benefits-heading">Once signed in, you can:</h4>
               <ul class="welcome-benefits-list">
                 <li class="benefit-item">
                   <span class="benefit-icon">🍽️</span>
@@ -186,16 +187,16 @@
                 <li class="benefit-item">
                   <span class="benefit-icon">📅</span>
                   <div class="benefit-text">
-                    <strong>Send Recipe Events to Your Calendar</strong>
-                    <span>Automatically schedule cooking events with complete recipe instructions directly onto your
-                      Google Calendar, along with a synchronized grocery list.</span>
+                    <strong>Send Recipes to Your Calendar</strong>
+                    <span>Schedule recipe events directly onto your Google Calendar, along with a complete grocery
+                      list.</span>
                   </div>
                 </li>
                 <li class="benefit-item">
                   <span class="benefit-icon">📜</span>
                   <div class="benefit-text">
-                    <strong>View Your Personal Recipe History</strong>
-                    <span>Browse past dinners, favorite dishes your family loves, and easily re-use go-to recipes in
+                    <strong>View Your Recipe History</strong>
+                    <span>Browse past dinners, mark favorite recipes, and easily re-use recipes in
                       future meal plans.</span>
                   </div>
                 </li>
@@ -208,8 +209,8 @@
                 <div class="guest-notice-body">
                   <h4 class="guest-notice-title">Want to explore without signing in?</h4>
                   <p class="guest-notice-desc">
-                    You can visit the Planner view to generate a sample meal plan. While you can create a simple meal
-                    plan without logging in, it will not save this plan or add events to your Google Calendar.
+                    You can visit the Planner view to generate a sample meal plan. Doing so won't save this plan or add
+                    events to your Google Calendar.
                   </p>
                 </div>
               </div>
@@ -320,13 +321,13 @@
               <button type="button" class="history-subtab active" id="subtab-history-recent"
                 onclick="switchHistoryTab('recent')">
                 <span class="subtab-icon">📜</span>
-                <span>Recipe History</span>
+                <span>Full History</span>
                 <span class="subtab-badge" id="badge-recent-count">0</span>
               </button>
               <button type="button" class="history-subtab" id="subtab-history-favorites"
                 onclick="switchHistoryTab('favorites')">
                 <span class="subtab-icon">⭐</span>
-                <span>Family Favorites</span>
+                <span>Favorites</span>
                 <span class="subtab-badge" id="badge-favorites-count">0</span>
               </button>
             </div>
@@ -751,8 +752,8 @@ Instructions:
   <script>
     window.APP_CONFIG = {
       authenticated: {{ 'true' if (authenticated and user) else 'false' }},
-      appVersion: "{{ app_version }}",
-      schemaVersion: {{ schema_version }}
+    appVersion: "{{ app_version }}",
+      schemaVersion: { { schema_version } }
     };
   </script>
   <!-- Include Client-Side JS -->
