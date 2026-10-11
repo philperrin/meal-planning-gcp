@@ -1985,7 +1985,7 @@ function renderMealPlan() {
   if (plan.approved && plan.executionResult) {
     html += `
       <div class="success-box">
-        <h4 class="success-title">Meal plan scheduled on <a href="https://calendar.google.com" target="_blank" class="doc-link">Google Calendar</a>!</h4>
+        <h4 class="success-title">Meal plan scheduled on your <a href="https://calendar.google.com" target="_blank">Google Calendar</a>!</h4>
         <p class="success-desc">Individual recipes and your grocery list have been added directly to your calendar.</p>
       </div>
     `;
